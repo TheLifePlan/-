@@ -35,6 +35,19 @@ New-Item -ItemType Directory -Force -Path $fragDir | Out-Null
 Copy-Item -Force (Join-Path $PSScriptRoot 'wt-fragment.json') (Join-Path $fragDir 'ws-desks.json')
 Write-Host "   置いた: $fragDir\ws-desks.json (Windows Terminal を開き直すと「本社」「工場」「ミニ」「Book」「WS 机」のタブが出る)"
 
+Step "4b. ws の一語で WS 机を開く (PowerShell・コマンドプロンプト)"
+$binDir = Join-Path $env:USERPROFILE '.local\bin'
+New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+Copy-Item -Force (Join-Path $PSScriptRoot 'ws.cmd') (Join-Path $binDir 'ws.cmd')
+# 本人の PATH だけ (システム共通は触らない)。既にあれば足さない。
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+$parts = @($userPath -split ';' | Where-Object { $_ })
+if ($parts -notcontains $binDir) {
+  [Environment]::SetEnvironmentVariable('Path', (($parts + $binDir) -join ';'), 'User')
+  Write-Host "   PATH に足した: $binDir (新しく開いたシェルから効く)"
+}
+Write-Host "   置いた: $binDir\ws.cmd (ws と打つと WS 机のタブ)"
+
 Step "5. スリープを切る (電源・バッテリーとも)"
 powercfg /change standby-timeout-ac 0
 powercfg /change standby-timeout-dc 0

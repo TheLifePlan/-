@@ -27,6 +27,8 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
 | `windows/Install-WS.ps1` | ザラ・Windows の管理者 PowerShell | WSL2+Ubuntu、Windows Terminal、Tailscale を入れる。タブ fragment を置く。スリープを切る |
 | `windows/wt-fragment.json` | (Install が置く) | Windows Terminal に「本社・工場・ミニ・Book・Claude (WSCL01)・WS 机・疎通」のタブ |
 | `windows/Register-DesksOnLogon.ps1` | Windows の Claude・PowerShell | ログオン時に WS の机 (desks-startup.sh) が立つタスク WS-desks と、60 秒後に「WS 机」のタブを開く WS-terminal。どちらも電池でも起動。本社から写した後に |
+| `windows/ws.cmd` | (Install が置く) | PowerShell・コマンドプロンプトで `ws` と打つと「WS 机」のタブ。置き場 = 本人の `.local\bin` (本人の PATH) |
+| `wsl/bin/ws` | (setup-ws が置く) | Ubuntu のシェルで `ws` と打つと `~/ai/bin/studio.sh` で WS 机へ入る |
 | `wsl/setup-ws.sh` | Windows の Claude・Ubuntu | 道具・置き場・鍵・ssh 設定・sshd・接続コマンドを一度に入れる |
 | `wsl/install-ai.sh` | ザラか Windows の Claude・Ubuntu | **claude / codex / grok を Ubuntu に入れる** (手順書 節 1 の 4)。ログインは人の手。無い物は未確認で先へ進む |
 | `wsl/bin/ws-claude` | Ubuntu | `ws-claude` で WSCL01 Claudeコマンダー を立てる (02/03 で助さん・格さん)。tmux の机に同じ窓があればそこへ着く |

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# ws — WS 机へ入る (2026-10-21 ザラ「再起動したらひとこと」)。正規入口 studio.sh だけを通す。
+# studio.sh は 58 窓を作り終えるまで待ってから入る。空の win は作らない。
+set -euo pipefail
+if [[ -n "${TMUX:-}" ]]; then
+  echo 'もう tmux の中です。WS 机は tmux の外 (Ubuntu のシェル) で ws。' >&2
+  exit 1
+fi
+exec "$HOME/ai/bin/studio.sh" "$@"

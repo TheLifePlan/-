@@ -28,7 +28,7 @@ else
 fi
 
 echo "== 4. 接続コマンドを入れる (~/ai/ws/bin)"
-install -m 755 "$KIT/bin/desk" "$KIT/bin/desks-check" "$KIT/bin/accept-keys" "$KIT/bin/ws-claude" "$WS/bin/"
+install -m 755 "$KIT/bin/desk" "$KIT/bin/desks-check" "$KIT/bin/accept-keys" "$KIT/bin/ws-claude" "$KIT/bin/ws" "$WS/bin/"
 install -m 755 "$KIT/bin/refresh-hq-helpers" "$WS/bin/refresh-hq-helpers"
 if [ ! -f "$WS/hosts.tsv" ]; then
   install -m 600 "$KIT/hosts.tsv.example" "$WS/hosts.tsv"
