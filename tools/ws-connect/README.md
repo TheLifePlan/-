@@ -26,7 +26,7 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
 | --- | --- | --- |
 | `windows/Install-WS.ps1` | ザラ・Windows の管理者 PowerShell | WSL2+Ubuntu、Windows Terminal、Tailscale を入れる。タブ fragment を置く。スリープを切る |
 | `windows/wt-fragment.json` | (Install が置く) | Windows Terminal に「本社・工場・ミニ・Book・Claude (WSCL01)・WS 机・疎通」のタブ |
-| `windows/Register-DesksOnLogon.ps1` | Windows の Claude・PowerShell | ログオン時に WS の机 (desks-startup.sh) が立つタスク。本社から写した後に |
+| `windows/Register-DesksOnLogon.ps1` | Windows の Claude・PowerShell | ログオン時に WS の机 (desks-startup.sh) が立つタスク WS-desks と、60 秒後に「WS 机」のタブを開く WS-terminal。どちらも電池でも起動。本社から写した後に |
 | `wsl/setup-ws.sh` | Windows の Claude・Ubuntu | 道具・置き場・鍵・ssh 設定・sshd・接続コマンドを一度に入れる |
 | `wsl/install-ai.sh` | ザラか Windows の Claude・Ubuntu | **claude / codex / grok を Ubuntu に入れる** (手順書 節 1 の 4)。ログインは人の手。無い物は未確認で先へ進む |
 | `wsl/bin/ws-claude` | Ubuntu | `ws-claude` で WSCL01 Claudeコマンダー を立てる (02/03 で助さん・格さん)。tmux の机に同じ窓があればそこへ着く |
@@ -100,7 +100,7 @@ head/hands/snapshotが全て無いWSだけ、今回本社コマンダーが確�
 
 ## Terminalの入口（iTermのプロファイルに相当）
 
-5入口は「WS 机・本社・工場・ミニ・Book」。WS 机は `tmux -L win` の `win` へ入り、不在時だけ1窓を作る。本社などの実宛先は公開JSONへ入れず、WS内の `~/ai/ws/hosts.tsv` を `terminal-entry` が読む。工場は専用の `factory-remote.sh` へ入り、端末ごとに別の今の窓を保つ。
+5入口は「WS 机・本社・工場・ミニ・Book」。WS 机は `~/ai/bin/studio.sh` で `tmux -L win` の `win` へ入る。win が無ければ表どおり58窓を作ってから入り、ほかの起動が作っている間は終わるまで待つ (空の win は作らない)。本社などの実宛先は公開JSONへ入れず、WS内の `~/ai/ws/hosts.tsv` を `terminal-entry` が読む。工場は専用の `factory-remote.sh` へ入り、端末ごとに別の今の窓を保つ。
 
 `setup-ws.sh` は手動設定用の断片を `~/ai/ws/windows-terminal/profiles.json` へ置く。設定は自動で書き換えない。Windows Terminalで `Ctrl+,` →「JSONファイルを開く」を選ぶ。通常版の実体は `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`、非Store版は `%LOCALAPPDATA%\Microsoft\Windows Terminal\settings.json`、Preview版は `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json`。開いたsettings.jsonを先に控え、次のどちらか1つで入れる。
 
@@ -113,7 +113,7 @@ head/hands/snapshotが全て無いWSだけ、今回本社コマンダーが確�
 
 moshがWS側と接続先の両方にあれば、Ubuntuで `DESK_MOSH=1 ~/ai/ws/bin/terminal-entry honsha`（他は `koujou` / `mini` / `book`）で同じ入口を使える。profileをmoshにしたい場合はcommandline内のhelperの前に `DESK_MOSH=1 ` を付ける。未導入なら既定のsshを使う。
 
-**先に58窓の表を生成して `~/ai/bin/studio.sh --create-only` を行うのが通常の順番。** 「WS 机」のfallbackで1窓だけのwinが先にできた場合、58窓の表とは一致しないためstudio.shは未変更のまま止まる。既存winを自動削除しない。本社へ状態を伝えて配置を整える。
+**先に58窓の表を生成して `~/ai/bin/studio.sh --create-only` を行うのが通常の順番。** 2026-10-21 から「WS 机」も studio.sh を通るので、1窓だけの win はできない。前の版の fallback で1窓だけの win が残っている場合は、58窓の表と一致しないため studio.sh は未変更のまま止まる。既存winを自動削除しない。本社へ状態を伝えて配置を整える。
 
 本社・ミニ・Book側へ将来追加する「WS」の入口は `ssh -t <WS利用者>@<WSのTailscale名または100アドレス> tmux -L win attach -t win`。PC名/Tailscale名の本人回答後に各端末の担当が値を入れる。今は空欄で、各端末のメニューは今回変更していない。
 

@@ -71,6 +71,14 @@ for number, name in sorted(rows):
     print(str(number) + '|' + name)
 PYCONF
 )
+# 作る/照合する間だけ鍵をかける。ログオン時の desks-startup と WS 机のタブが同時に来ても、
+# 片方が作り終えるまで待つ (空の win や二重作成を作らない)。attach の前に外す。
+LOCK="$HOME/ai/flags/studio-$SOCKET.lock"
+mkdir -p "$(dirname "$LOCK")"
+if command -v flock >/dev/null 2>&1; then  # WS の Ubuntu にはある (util-linux)。無い試験環境では飛ばす
+  exec 9>"$LOCK"
+  flock -w 180 9 || { echo '未変更・ほかの起動が終わらない（180秒）。' >&2; exit 1; }
+fi
 if "${T[@]}" has-session -t '=win' 2>/dev/null; then
   actual=$("${T[@]}" list-windows -t '=win' -F '#{window_index}|#{window_name}' | sort -t '|' -k1,1n)
   [[ "$actual" == "$expected" ]] || { echo '未変更・表と不一致（既存winセッション）。' >&2; exit 1; }
@@ -110,5 +118,6 @@ else
   [[ -n "$first" ]] || { echo '窓の表が空です。' >&2; exit 1; }
   "${T[@]}" select-window -t "win:$first"
 fi
+{ flock -u 9 && exec 9>&-; } 2>/dev/null || true
 [[ "${1:-}" == --create-only ]] && exit 0
 exec "${T[@]}" attach-session -t '=win'

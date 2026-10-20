@@ -4,7 +4,7 @@
       {
         "guid": "{4ce7dd61-f5b5-5a52-9a9b-a2b8801eb0b6}",
         "name": "WS 机",
-        "commandline": "wsl.exe -d Ubuntu -- bash -lc \"tmux -L win attach -t win || tmux -L win new -s win\"",
+        "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/bin/studio.sh || exec bash -l\"",
         "tabTitle": "WS 机"
       },
       {

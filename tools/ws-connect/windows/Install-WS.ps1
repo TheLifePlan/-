@@ -1,4 +1,4 @@
-# Install-WS.ps1 — Windows PC (WS) の「ザラの手」のうち、台本で済む分をまとめて行う。
+﻿# Install-WS.ps1 — Windows PC (WS) の「ザラの手」のうち、台本で済む分をまとめて行う。
 # Notion「Windows PC（WS）の手順書」節 1 の 1〜3 と 6 (スリープ) に相当。ログイン操作 (Tailscale・3 つの AI・自動ログオン) は人の手。
 # 管理者の PowerShell で:  Set-ExecutionPolicy -Scope Process Bypass -Force; .\Install-WS.ps1
 # 何度実行しても同じ結果になる。
@@ -42,9 +42,15 @@ powercfg /change hibernate-timeout-ac 0
 powercfg /change hibernate-timeout-dc 0
 
 Step "6. WSL を起動時に上げておく (sshd の受け口のため)"
+# ノート PC は電池でも起動・継続・時間の上限なし (schtasks の既定は「電池では起動しない」・72 時間で止まる。2026-10-21 WS で実際に止まった)。
 try {
-  schtasks /Create /F /TN "WS-wsl-keepalive" /SC ONLOGON /RL LIMITED /TR "wsl.exe -d Ubuntu -- sleep infinity" | Out-Null
-  Write-Host "   登録した: WS-wsl-keepalive (ログオン時)"
+  $u = "$env:USERDOMAIN\$env:USERNAME"
+  $set = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
+  $pr = New-ScheduledTaskPrincipal -UserId $u -LogonType Interactive -RunLevel Limited
+  $tr = New-ScheduledTaskTrigger -AtLogOn -User $u
+  $ac = New-ScheduledTaskAction -Execute "wsl.exe" -Argument "-d Ubuntu -- sleep infinity"
+  Register-ScheduledTask -Force -TaskName "WS-wsl-keepalive" -Trigger $tr -Action $ac -Settings $set -Principal $pr -ErrorAction Stop | Out-Null
+  Write-Host "   登録した: WS-wsl-keepalive (ログオン時・電池でも)"
 } catch { Write-Host "   未確認: タスク登録に失敗。タスク スケジューラで手で入れる" -ForegroundColor Yellow }
 
 Write-Host "`n================ 残りは人の手 ================" -ForegroundColor Green
