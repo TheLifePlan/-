@@ -45,6 +45,11 @@ done
 # 本社の表そのものは上書きしない。ここは将来WSで実行する配置処理。
 install -m 755 "$KIT/bin/ws-windows-conf.py" "$KIT/bin/menu.sh" "$KIT/bin/studio.sh" "$HOME/ai/bin/"
 install -m 644 "$KIT/builder/windows.conf.ws" "$KIT/builder/tmux.conf" "$HOME/ai/builder/"
+# 2026-10-21: studio.sh は起動時に ~/.tmux.conf (全端末共通・毎時 rules-sync が配る版) を読む。
+# 無い時だけ同じ中身の共通版を置く。既にある ~/.tmux.conf (リンクも) は上書きしない。
+if [ ! -e "$HOME/.tmux.conf" ] && [ ! -L "$HOME/.tmux.conf" ]; then install -m 644 "$KIT/builder/tmux.conf" "$HOME/.tmux.conf"; fi
+# WS だけの仕事順メニュー (帯の[WS]の一覧)。既にあれば上書きしない。
+[ -e "$HOME/ai/work-menu.tsv" ] || install -m 644 "$KIT/builder/work-menu.tsv" "$HOME/ai/work-menu.tsv"
 for helper in hq_head.py menu-navigation.py tmux-head-status-v2.py tmux-head-status-v3.py tmux-desk-menu.py tmux-desk-menu.sh tmux-terminal-config.py; do
   install -m 755 "$KIT/bin/$helper" "$HOME/ai/bin/$helper"
 done

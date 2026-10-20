@@ -151,7 +151,7 @@ def install(source, home):
     for rel, text in converted.items(): write(home / rel, text, 0o644 if rel.endswith(('.json', '.tsv')) else 0o755)
     write(home / 'ai/bin/guard-paper.sh', '#!/bin/sh\nexec "$HOME/ai/guard/guard-paper.sh" "$@"\n')
     write(home / 'ai/bin/tell-targets.tsv', table, 0o600)
-    write(home / 'ai/terminal.conf', json.dumps({'symbol': 'WS', 'socket': 'win', 'session': 'win', 'label': 'WS', 'menu': 'WSMENU'}) + '\n', 0o600, missing=True)
+    write(home / 'ai/terminal.conf', json.dumps({'symbol': 'WS', 'socket': 'win', 'session': 'win', 'label': 'WS', 'menu': 'WSMENU', 'home': 'WSCD01 Codexコマンダー'}) + '\n', 0o600, missing=True)
     for kind in ('youtube', 'builder'):
         for family in ('codex', 'claude', 'grok'):
             write(home / ('ai/ws/startup/' + kind + '-' + family + '.md'), STARTUP, 0o600, missing=True)

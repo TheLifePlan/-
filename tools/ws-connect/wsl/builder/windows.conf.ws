@@ -1,11 +1,11 @@
-0|WSMENU メニュー|$HOME/ai|$HOME/ai/bin/menu.sh
-1|WSCL01 Claudeコマンダー|$HOME/ai/builder|"$CL" --model fable --permission-mode bypassPermissions --continue --name "WSCL01 Claudeコマンダー" --remote-control "WSCL01 Claudeコマンダー" || "$CL" --model fable --permission-mode bypassPermissions --name "WSCL01 Claudeコマンダー" --remote-control "WSCL01 Claudeコマンダー"; exec bash -l
-2|WSCL02 助さん|$HOME/ai/hands/02|"$CL" --permission-mode bypassPermissions --model opus --continue --name "WSCL02 助さん" --remote-control "WSCL02 助さん" || "$CL" --permission-mode bypassPermissions --model opus --name "WSCL02 助さん" --remote-control "WSCL02 助さん"; exec bash -l
-3|WSCL03 格さん|$HOME/ai/hands/03|"$CL" --permission-mode bypassPermissions --model opus --continue --name "WSCL03 格さん" --remote-control "WSCL03 格さん" || "$CL" --permission-mode bypassPermissions --model opus --name "WSCL03 格さん" --remote-control "WSCL03 格さん"; exec bash -l
-4|WSGR01 Grokコマンダー|$HOME/ai/grok|"$GR" --permission-mode bypassPermissions; exec bash -l
-5|WSGR02 金さん|$HOME/ai/grok/02|"$GR" --permission-mode bypassPermissions; exec bash -l
-6|WSGR03 銀さん|$HOME/ai/grok/03|"$GR" --permission-mode bypassPermissions; exec bash -l
-7|WSCD01 Codexコマンダー|$HOME/ai/codex|"$CD" -c check_for_update_on_startup=false -s danger-full-access -a never -m gpt-6.1-sol -c 'model_reasoning_effort="low"'; exec bash -l
+# 2026-10-21 ザラ「全部署共通で3コマンダーが1番左」「窓のメニューは削除していい」: 1 Codex01 2 Claude01 3 Grok01 → 4〜9 お付き (CL→GR→CD)。0 MENU 窓は廃止 (机の一覧は帯の[端末]から)。上の古い説明よりこの行が優先。
+1|WSCD01 Codexコマンダー|$HOME/ai/codex|"$CD" -c check_for_update_on_startup=false -s danger-full-access -a never -m gpt-6.1-sol -c 'model_reasoning_effort="low"'; exec bash -l
+2|WSCL01 Claudeコマンダー|$HOME/ai/builder|"$CL" --model fable --permission-mode bypassPermissions --continue --name "WSCL01 Claudeコマンダー" --remote-control "WSCL01 Claudeコマンダー" || "$CL" --model fable --permission-mode bypassPermissions --name "WSCL01 Claudeコマンダー" --remote-control "WSCL01 Claudeコマンダー"; exec bash -l
+3|WSGR01 Grokコマンダー|$HOME/ai/grok|"$GR" --permission-mode bypassPermissions; exec bash -l
+4|WSCL02 助さん|$HOME/ai/hands/02|"$CL" --permission-mode bypassPermissions --model opus --continue --name "WSCL02 助さん" --remote-control "WSCL02 助さん" || "$CL" --permission-mode bypassPermissions --model opus --name "WSCL02 助さん" --remote-control "WSCL02 助さん"; exec bash -l
+5|WSCL03 格さん|$HOME/ai/hands/03|"$CL" --permission-mode bypassPermissions --model opus --continue --name "WSCL03 格さん" --remote-control "WSCL03 格さん" || "$CL" --permission-mode bypassPermissions --model opus --name "WSCL03 格さん" --remote-control "WSCL03 格さん"; exec bash -l
+6|WSGR02 金さん|$HOME/ai/grok/02|"$GR" --permission-mode bypassPermissions; exec bash -l
+7|WSGR03 銀さん|$HOME/ai/grok/03|"$GR" --permission-mode bypassPermissions; exec bash -l
 8|WSCD02 次元|$HOME/ai/codex/02|"$CD" -c check_for_update_on_startup=false -s danger-full-access -a never; exec bash -l
 9|WSCD03 五右衛門|$HOME/ai/codex/03|"$CD" -s danger-full-access -a never; exec bash -l
 10|WSCL05 さなくろ|$HOME/ai/hands/05|"$CL" --permission-mode bypassPermissions --model opus --continue --name "WSCL05 さなくろ" --remote-control "WSCL05 さなくろ" || "$CL" --permission-mode bypassPermissions --model opus --name "WSCL05 さなくろ" --remote-control "WSCL05 さなくろ"; exec bash -l

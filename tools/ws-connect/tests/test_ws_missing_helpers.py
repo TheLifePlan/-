@@ -94,14 +94,16 @@ class MissingHelpersTests(unittest.TestCase):
         self.assertFalse(marker.exists())
         self.assertIn(str(executable), launches[-1])
 
-    def test_template_and_grok_runtime_remain_fifty_eight_bash_rows(self):
+    def test_template_and_grok_runtime_remain_fifty_seven_bash_rows(self):
+        # 2026-10-21: the WSMENU window was retired (58 -> 57); commanders CD01/CL01/GR01 at 1-3.
         template = (KIT / 'wsl/builder/windows.conf.ws').read_text()
-        self.assertEqual(len(w.rows(template)), 58)
+        self.assertEqual(len(w.rows(template)), 57)
+        self.assertNotIn('WSMENU', template)
         self.assertNotIn('exec zsh -l', template)
         self.assertNotIn('zsh -c', template)
         resolved, skipped = w.resolve_template(template, {'CL': '/fixture/claude', 'CD': '/fixture/codex',
                                                          'GR': '/fixture/grok'}, self.home)
-        self.assertEqual(len(resolved), 58)
+        self.assertEqual(len(resolved), 57)
         self.assertEqual(skipped, [])
         sample = '0|SMMENU menu|~/ai|zsh -c "echo fixture"; exec zsh -l\n'
         command = w.make_template(sample)[0][3]

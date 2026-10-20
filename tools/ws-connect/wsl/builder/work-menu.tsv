@@ -1,0 +1,12 @@
+# WS 専用の仕事順メニュー (2026-10-21 SMCL01 設計 / SMCD01 確定)。1行 = 表示名<TAB>種類<TAB>値。
+# hands NN = 今の手足の家 (~/ai/flags/hands.conf) の NN 番の机へ。入力/申込は 42、照合は 03 で必ず別机。all = 全机の一覧。note = 押しても何もしない表示。
+# 3コマンダー (WSCD01/WSCL01/WSGR01) は helper が常に先頭に出す。最終提出の命令は作らない。
+システム操作	hands	02
+受付	hands	53
+顧客情報入力	hands	42
+入力照合	hands	03
+設計書	hands	42
+比較推奨の確かめ	hands	46
+申込準備	hands	42
+その他の机（全机）	all	-
+最終提出はザラ	note	-

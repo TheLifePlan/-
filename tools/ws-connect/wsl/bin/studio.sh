@@ -3,7 +3,8 @@
 set -euo pipefail
 CONF=${WS_WINDOWS_CONF:-$HOME/ai/builder/windows.conf}
 SOCKET=${WS_TMUX_SOCKET:-win}
-CONFIG=${WS_TMUX_CONFIG:-$HOME/ai/builder/tmux.conf}
+# 2026-10-21: 起動時も全端末共通の ~/.tmux.conf (毎時 rules-sync が配る版) を読む。古い builder/tmux.conf に戻さない。
+CONFIG=${WS_TMUX_CONFIG:-$HOME/.tmux.conf}
 T=(tmux -L "$SOCKET" -f "$CONFIG")
 WS_CLI_FLAG=${WS_CLI_FLAG:-$HOME/ai/flags/ws-cli-unconfirmed.txt}
 export WS_CLI_FLAG

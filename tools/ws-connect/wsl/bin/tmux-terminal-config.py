@@ -21,15 +21,20 @@ def preset(symbol, socket, session):
                                      (9, 'GR', [('01', 'Grokコマンダー'), ('05', 'さな'), ('04', 'えま'), ('06', 'みお')])]:
             for offset, (number, title) in enumerate(names): window(start + offset, symbol + family + number + ' ' + title)
     elif symbol == 'SF':
-        names = ['SFCD01 Codexコマンダー', 'SFCD02 次元', 'SFCD03 五右衛門', 'SFMENU メニュー',
+        # 2026-10-21 ZARA: the menu window is retired; F4 opens the desk popup instead.
+        names = ['SFCD01 Codexコマンダー', 'SFCD02 次元', 'SFCD03 五右衛門', None,
                  'SFCL01 Claudeコマンダー', 'SFCL02 助さん', 'SFCL03 格さん', 'SFMO01 進み具合',
                  'SFGR01 Grokコマンダー', 'SFGR02 金さん', 'SFGR03 銀さん', 'SFSH01 作業端末']
-        for key, name in enumerate(names, 1): window(key, name)
+        for key, name in enumerate(names, 1):
+            if name: window(key, name)
+            else: keys['F' + str(key)] = {'popup': 'desks'}
     elif symbol == 'MD':
-        names = ['MDMENU メニュー', 'MDCL01 Claudeコマンダー', 'MDCL02 助さん', 'MDCL03 格さん',
-                 'MDGR01 Grokコマンダー', 'MDGR02 金さん', 'MDGR03 銀さん',
-                 'MDCD01 Codexコマンダー', 'MDCD02 次元', 'MDCD03 五右衛門']
-        for key, name in enumerate(names, 1): window(key, name)
+        names = ['MDCD01 Codexコマンダー', 'MDCD02 次元', 'MDCD03 五右衛門', None,
+                 'MDCL01 Claudeコマンダー', 'MDCL02 助さん', 'MDCL03 格さん', '',
+                 'MDGR01 Grokコマンダー', 'MDGR02 金さん', 'MDGR03 銀さん', 'MDOP 操作']
+        for key, name in enumerate(names, 1):
+            if name: window(key, name)
+            elif name is None: keys['F' + str(key)] = {'popup': 'desks'}
     elif symbol == 'BV':
         for start, family, title, roles in [(1, 'CD', 'Codex', ['さなこ', 'えまこ', 'みおこ']),
                                           (5, 'CL', 'Claude', ['さなくろ', 'えまくろ', 'みおくろ']),
@@ -38,7 +43,9 @@ def preset(symbol, socket, session):
             for offset, role in enumerate(roles, 1): keys['F' + str(start + offset)] = {'message': title + ' / ' + role + ': 未設置（予約枠）'}
     else:
         raise ValueError('terminal-symbol-invalid')
-    return {'symbol': symbol, 'socket': socket, 'session': session, 'label': LABELS[symbol], 'menu': symbol + 'MENU', 'fkeys': keys}
+    value = {'symbol': symbol, 'socket': socket, 'session': session, 'label': LABELS[symbol], 'menu': symbol + 'MENU', 'fkeys': keys}
+    if symbol == 'WS': value['home'] = 'WSCD01 Codexコマンダー'  # replaces the old Home → WSMENU
+    return value
 
 
 
@@ -52,10 +59,12 @@ def native_fallback(symbol):
                 '#{p-' + str(width) + ':#{=' + str(width) + ':#{s/Claude|Codex|Grok//:window_name}}}'
                 '#[norange default list=on] ,}}')
     def row(width):
+        # Codex01/Claude01/Grok01 exact first, then the other AI desks in window order.
         non_ai = '#{&&:#{!:#{m/r:^' + symbol + '(CL|CD|GR)[0-9][0-9] ,#{window_name}}},#{window_active}}'
+        others = '#{m/r:^' + symbol + '(CL|CD|GR)(0[2-9]|[1-9][0-9]) ,#{window_name}}'
         return ('#[list=on align=left]#[list=left-marker]‹#[list=right-marker]›#[list=on]'
-                + ''.join(group(symbol + family, width) for family in ('CD', 'CL', 'GR'))
-                + window(non_ai, width) + '#[nolist norange default]')
+                + ''.join(window('#{m/r:^' + symbol + family + '01 ,#{window_name}}', width) for family in ('CD', 'CL', 'GR'))
+                + window(others, width) + window(non_ai, width) + '#[nolist norange default]')
     return '#{?#{e|<:#{client_width},80},' + row(16) + ',#{?#{e|<:#{client_width},120},' + row(20) + ',' + row(33) + '}}'
 
 
@@ -64,17 +73,23 @@ def commands(config, home, python, version='3.7'):
     if symbol not in LABELS or not re.fullmatch(r'[A-Za-z0-9_-]+', session): raise ValueError('terminal-invalid')
     if any(ord(c) < 32 or ord(c) == 127 for c in label): raise ValueError('terminal-label-invalid')
     keys = config.get('fkeys', preset(symbol, config['socket'], session)['fkeys'])
+    binary = shlex.quote(str(python)); scripts = home / 'ai/bin'
+    menu = binary + ' ' + shlex.quote(str(scripts / 'tmux-desk-menu.py')) + " #{?client_name,#{q:client_name},''}"
     rows = []
     for key in range(1, 13): rows.append(['unbind-key', '-q', '-n', 'F' + str(key)])
+    rows.append(['unbind-key', '-q', '-n', 'Home'])
+    home_window = config.get('home')
+    if home_window is not None:
+        if not isinstance(home_window, str) or not home_window or any(ord(c) < 32 or ord(c) == 127 for c in home_window): raise ValueError('home-invalid')
+        rows.append(['bind-key', '-n', 'Home', 'select-window', '-t', '=' + session + ':=' + home_window])
     for key, action in keys.items():
         if not re.fullmatch(r'F(?:[1-9]|1[0-2])', key) or not isinstance(action, dict) or len(action) != 1: raise ValueError('fkey-invalid')
         kind, value = next(iter(action.items()))
         if not isinstance(value, str) or not value or any(ord(c) < 32 or ord(c) == 127 for c in value): raise ValueError('fkey-invalid')
         if kind == 'window': rows.append(['bind-key', '-n', key, 'select-window', '-t', '=' + session + ':=' + value])
         elif kind == 'message': rows.append(['bind-key', '-n', key, 'display-message', '-d', '3000', value])
+        elif kind == 'popup' and value == 'desks': rows.append(['bind-key', '-n', key, 'run-shell', '-b', menu])
         else: raise ValueError('fkey-invalid')
-    binary = shlex.quote(str(python)); scripts = home / 'ai/bin'
-    menu = binary + ' ' + shlex.quote(str(scripts / 'tmux-desk-menu.py')) + " #{?client_name,#{q:client_name},''}"
     status = binary + ' ' + shlex.quote(str(scripts / 'tmux-head-status-v3.py'))
     args = " --session '#{session_id}' --client #{?client_name,#{q:client_name},''}"
     render = status + args + " --current '#{window_id}' --width #{client_width} 2>/dev/null"

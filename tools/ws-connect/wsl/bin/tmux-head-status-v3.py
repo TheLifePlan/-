@@ -28,7 +28,12 @@ def state(socket=None,home=None,session=None,current='',client='',live_current=F
         return next((i for i,prefix in enumerate((prefix+'CD',prefix+'CL',prefix+'GR')) if code.startswith(prefix) and len(code)==6 and code[4:].isdigit()),3)
     for row in rows:
         if group(row)<3 or row[1]==current:chosen.append(row)
-    chosen.sort(key=lambda row:(group(row),int(row[0])))
+    # 2026-10-21 ZARA: Codex01/Claude01/Grok01 exact first, then the physical window order.
+    lead=tuple(prefix+family+'01' for family in ('CD','CL','GR'))
+    def rank(row):
+        code=row[2].split(' ',1)[0]
+        return lead.index(code) if code in lead else 3
+    chosen.sort(key=lambda row:(rank(row),int(row[0])))
     return chosen,current
 
 def clip(value,width):

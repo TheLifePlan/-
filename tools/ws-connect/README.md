@@ -2,7 +2,7 @@
 
 Notion「会社の仕組み・取り決め → 端末ごとの取り決め → Windows PC（WS）の手順書」(2026-10-20) を、
 貼って動く台本にしたもの。手順書の**節 1 (ザラの手)・節 2 (鍵と ssh の受け口)・節 3 (本社側)・節 4 (確かめ)** を担う。
-本社の補助台本は下の専用refresh段で取り直す。机の起動表は同梱の本社58行テンプレートからWS向けに生成する。
+本社の補助台本は下の専用refresh段で取り直す。机の起動表は同梱の本社57行テンプレートからWS向けに生成する。
 
 **このリポジトリは公開**なので、Tailscale の宛先・利用者名・鍵はここに書かない。宛先は PC の中の `~/ai/ws/hosts.tsv` に置く。
 
@@ -64,7 +64,7 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
    grok                        # 本人がブラウザで許可してログイン
    ws-claude                   # WSCL01 Claudeコマンダー の窓が立つ (Windows Terminal の「Claude」タブも同じ)
    ```
-   Grok CLIのLinux版は[公式installer](https://x.ai/cli/install.sh)で入る。`install-ai.sh` は無ければ `curl -fsSL https://x.ai/cli/install.sh | bash` を実行し、`~/.grok/bin` を今と新しいshellのPATHへ追加する。失敗した時だけ `~/ai/flags/ws-grok-unconfirmed.txt` を残す。ログインは本人が `grok` を起動してブラウザで許可する（手順書 節1の4・節5）。Grokが入れば変換表はGR11窓を含む58行。
+   Grok CLIのLinux版は[公式installer](https://x.ai/cli/install.sh)で入る。`install-ai.sh` は無ければ `curl -fsSL https://x.ai/cli/install.sh | bash` を実行し、`~/.grok/bin` を今と新しいshellのPATHへ追加する。失敗した時だけ `~/ai/flags/ws-grok-unconfirmed.txt` を残す。ログインは本人が `grok` を起動してブラウザで許可する（手順書 節1の4・節5）。Grokが入れば変換表はGR11窓を含む57行。
 3. **節 3・本社側 (01)** — prod@Studio で
    ```bash
    MINI=dev@<ミニの100.> BOOK=zara@<Bookの100.> ./honsha/register-ws-key.sh "ssh-ed25519 AAAA... WS-xxx"
@@ -88,7 +88,7 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
 
 公開キットは取り直しのレシピだけを持つ。本社の31ファイルを明示一覧でSCPし、WSの私有一時フォルダで全件検査してから配置する。フォルダ丸ごとのSCPはしない。本社の台本は変更しない。対象はtell/hand・秘書3種・ayako/health/新聞/YouTube/builder・desk/home-window/menu-navigationと必要module、guardのコード/固定hook設定だけ。guardのstate/alerts/diagnostics/backup/tests、鍵/auth/.env、会話、HQのhead/hands snapshotは写さない。
 
-WS用にHOME・記号WS・win/winを読み替え、tell宛先は既存58窓の表からAI56窓だけを生成する。メニューとshellは本文を誤投入しないためtellの宛先から除く。元のwindows.confや窓番号/名前/稼働AIは変更しない。YouTubeはHQのresume IDを使わず新規起動、builder/YouTubeの初回紙はWS本人の接続確認だけを行って待機する内容を生成する。必要最小の規則/STARTUPは無い場合だけ置き、既存のWS規則は残す。healthの承認印は作らない。
+WS用にHOME・記号WS・win/winを読み替え、tell宛先は既存57窓の表からAI56窓だけを生成する。メニューとshellは本文を誤投入しないためtellの宛先から除く。元のwindows.confや窓番号/名前/稼働AIは変更しない。YouTubeはHQのresume IDを使わず新規起動、builder/YouTubeの初回紙はWS本人の接続確認だけを行って待機する内容を生成する。必要最小の規則/STARTUPは無い場合だけ置き、既存のWS規則は残す。healthの承認印は作らない。
 
 head/hands/snapshotが全て無いWSだけ、今回本社コマンダーが確認した `claude/claude` でWS独自generationを初期化する。既存が1つでもあれば上書きしない。役割の初期値であり、費用/外部送信/本番の権限を広げない。
 
@@ -96,13 +96,13 @@ head/hands/snapshotが全て無いWSだけ、今回本社コマンダーが確�
 
 ## WSのメニューとFキー
 
-`wsl/bin/menu.sh` はWSの窓一覧から番号か記号で移動する。`SMCL01` のような本社記号の入力も `WSCL01` として探す。`wsl/builder/tmux.conf` はF1〜4=Codex、F5〜8=Claude、F9〜12=Grok、各組はコマンダー→さな→えま→みおの固定。HomeでWSメニュー。Grok未設置時のF9〜12は行先が無い。
+`wsl/bin/menu.sh` はWSの窓一覧から番号か記号で移動する。`SMCL01` のような本社記号の入力も `WSCL01` として探す。`wsl/builder/tmux.conf` は全端末共通の `~/.tmux.conf` と同じ中身 (2026-10-21)。`wsl/bin/studio.sh` も起動時に `~/.tmux.conf` を読み (`WS_TMUX_CONFIG` で上書き可)、Fキー・帯・Home は `~/ai/terminal.conf` を `tmux-terminal-config.py` が当てる (F1=Codex01・F5=Claude01・F9=Grok01、Home=WSCD01)。窓は左から 1 WSCD01・2 WSCL01・3 WSGR01、MENU窓は廃止。帯の[WS]を押すと `~/ai/work-menu.tsv` の仕事順の一覧 (3コマンダー→仕事→全机)。`wsl/builder/work-menu.tsv` は1行=表示名<TAB>hands|all|note<TAB>番号。hands は今の手足の家の机へ (入力/申込 42 と照合 03 は別机)。最終提出の命令は無い。
 
 本社専用の動的status/head/hands切替helperは同梱しない。Shift+F1のhands09への動的移動も未対応。AI wrapperと各机の引継ぎ/規則、業務サービスの導入・稼働確認はこの窓配置だけでは完了しない。
 
 ## Terminalの入口（iTermのプロファイルに相当）
 
-5入口は「WS 机・本社・工場・ミニ・Book」。WS 机は `~/ai/bin/studio.sh` で `tmux -L win` の `win` へ入る。win が無ければ表どおり58窓を作ってから入り、ほかの起動が作っている間は終わるまで待つ (空の win は作らない)。本社などの実宛先は公開JSONへ入れず、WS内の `~/ai/ws/hosts.tsv` を `terminal-entry` が読む。工場は専用の `factory-remote.sh` へ入り、端末ごとに別の今の窓を保つ。
+5入口は「WS 机・本社・工場・ミニ・Book」。WS 机は `~/ai/bin/studio.sh` で `tmux -L win` の `win` へ入る。win が無ければ表どおり57窓を作ってから入り、ほかの起動が作っている間は終わるまで待つ (空の win は作らない)。本社などの実宛先は公開JSONへ入れず、WS内の `~/ai/ws/hosts.tsv` を `terminal-entry` が読む。工場は専用の `factory-remote.sh` へ入り、端末ごとに別の今の窓を保つ。
 
 `setup-ws.sh` は手動設定用の断片を `~/ai/ws/windows-terminal/profiles.json` へ置く。設定は自動で書き換えない。Windows Terminalで `Ctrl+,` →「JSONファイルを開く」を選ぶ。通常版の実体は `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`、非Store版は `%LOCALAPPDATA%\Microsoft\Windows Terminal\settings.json`、Preview版は `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json`。開いたsettings.jsonを先に控え、次のどちらか1つで入れる。
 
@@ -115,7 +115,7 @@ head/hands/snapshotが全て無いWSだけ、今回本社コマンダーが確�
 
 moshがWS側と接続先の両方にあれば、Ubuntuで `DESK_MOSH=1 ~/ai/ws/bin/terminal-entry honsha`（他は `koujou` / `mini` / `book`）で同じ入口を使える。profileをmoshにしたい場合はcommandline内のhelperの前に `DESK_MOSH=1 ` を付ける。未導入なら既定のsshを使う。
 
-**先に58窓の表を生成して `~/ai/bin/studio.sh --create-only` を行うのが通常の順番。** 2026-10-21 から「WS 机」も studio.sh を通るので、1窓だけの win はできない。前の版の fallback で1窓だけの win が残っている場合は、58窓の表と一致しないため studio.sh は未変更のまま止まる。既存winを自動削除しない。本社へ状態を伝えて配置を整える。
+**先に57窓の表を生成して `~/ai/bin/studio.sh --create-only` を行うのが通常の順番。** 2026-10-21 から「WS 机」も studio.sh を通るので、1窓だけの win はできない。前の版の fallback で1窓だけの win が残っている場合は、57窓の表と一致しないため studio.sh は未変更のまま止まる。既存winを自動削除しない。本社へ状態を伝えて配置を整える。
 
 本社・ミニ・Book側へ将来追加する「WS」の入口は `ssh -t <WS利用者>@<WSのTailscale名または100アドレス> tmux -L win attach -t win`。PC名/Tailscale名の本人回答後に各端末の担当が値を入れる。今は空欄で、各端末のメニューは今回変更していない。
 
