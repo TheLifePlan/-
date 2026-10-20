@@ -1,0 +1,42 @@
+{
+  "$help": "https://aka.ms/terminal-documentation",
+  "$schema": "https://aka.ms/terminal-profiles-schema",
+  "profiles": [
+    {
+      "name": "本社 (SMCL01)",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desk honsha\"",
+      "icon": "🏢",
+      "tabTitle": "本社"
+    },
+    {
+      "name": "工場 (SFCL01)",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desk koujou\"",
+      "icon": "🏭",
+      "tabTitle": "工場"
+    },
+    {
+      "name": "ミニ (MDCL01)",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desk mini\"",
+      "icon": "🖥️",
+      "tabTitle": "ミニ"
+    },
+    {
+      "name": "Book (BVCL01)",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desk book\"",
+      "icon": "💻",
+      "tabTitle": "Book"
+    },
+    {
+      "name": "WS 机 (tmux win)",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"tmux -L win attach -t win || exec bash -l\"",
+      "icon": "🪟",
+      "tabTitle": "WS"
+    },
+    {
+      "name": "部署の疎通 (desks-check)",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desks-check; echo; read -p 'Enter で閉じる'\"",
+      "icon": "✅",
+      "tabTitle": "疎通"
+    }
+  ]
+}

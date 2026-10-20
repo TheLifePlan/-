@@ -1,0 +1,8 @@
+# WS (Windows PC) から各部署へつなぐ宛先表。1 行 1 部署。タブ区切り。
+# 実物は ~/ai/ws/hosts.tsv に置く (このリポジトリは公開なので、本物の宛先はここに書かない)。
+# 列: 記号	表示名	ユーザー@Tailscaleアドレス	tmuxソケット(-Lの値。無ければ -)	セッション名(無ければ -)	着く窓の名前
+# 値は Notion「会社の仕組み・取り決め → 端末ごとの取り決め → Windows PC（WS）の手順書」節 2・3 と各端末の頁から写す。
+honsha	本社	prod@100.x.x.x	-	main	SMCL01
+koujou	工場	ai@100.x.x.x	studio	-	SFCL01
+mini	ミニ	dev@100.x.x.x	mini	mini	MDCL01
+book	Book	zara@100.x.x.x	-	zara	BVCL01

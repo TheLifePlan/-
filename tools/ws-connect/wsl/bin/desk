@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# desk — WS から部署の机 (tmux の窓) へ入る。
+#   desk            : 部署の一覧
+#   desk honsha     : 本社の SMCL01 窓へ (ssh)
+#   desk mini sh    : ミニへ普通のシェルで入る (tmux に入らない)
+#   DESK_MOSH=1 desk book : mosh があれば mosh で入る (切れても戻る)
+# 宛先は ~/ai/ws/hosts.tsv (hosts.tsv.example を写して埋める)。鍵は ~/.ssh/id_ed25519。
+set -u
+HOSTS="${DESK_HOSTS:-$HOME/ai/ws/hosts.tsv}"
+SSH_OPTS=(-o ConnectTimeout=8 -o ServerAliveInterval=30)
+
+die() { echo "desk: $*" >&2; exit 1; }
+[ -r "$HOSTS" ] || die "宛先表が無い: $HOSTS (hosts.tsv.example を写して ~/ai/ws/hosts.tsv を作る)"
+
+list() {
+  printf '%-8s %-6s %-28s %s\n' 記号 部署 宛先 窓
+  grep -v '^#' "$HOSTS" | awk -F'\t' 'NF>=6 {printf "%-8s %-6s %-28s %s\n", $1, $2, $3, $6}'
+}
+
+[ $# -ge 1 ] || { list; exit 0; }
+key="$1"; mode="${2:-tmux}"
+
+line=$(grep -v '^#' "$HOSTS" | awk -F'\t' -v k="$key" '$1==k {print; exit}')
+[ -n "$line" ] || { echo "desk: 知らない部署: $key" >&2; list >&2; exit 1; }
+IFS=$'\t' read -r _ label target sock sess win <<<"$line"
+[[ "$target" == *@* ]] || die "宛先が空: $label"
+[[ "$target" == *100.x* ]] && die "宛先がまだ例のまま: $label ($target)。hosts.tsv を埋める"
+
+tm="tmux"
+[ "$sock" != "-" ] && tm="tmux -L $sock"
+if [ "$sess" != "-" ]; then
+  remote="$tm select-window -t '$sess:$win' 2>/dev/null; exec $tm attach-session -t '$sess'"
+else
+  remote="exec $tm attach-session \; select-window -t '$win'"
+fi
+
+if [ "$mode" = "sh" ]; then
+  exec ssh "${SSH_OPTS[@]}" -t "$target"
+fi
+
+if [ "${DESK_MOSH:-0}" = "1" ] && command -v mosh >/dev/null 2>&1; then
+  srv=()
+  [ -n "${MOSH_SERVER:-}" ] && srv=(--server="$MOSH_SERVER")
+  exec mosh "${srv[@]}" "$target" -- bash -lc "$remote"
+fi
+exec ssh "${SSH_OPTS[@]}" -t "$target" "bash -lc \"$remote\""

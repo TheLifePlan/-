@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# desks-check — 4 部署へ鍵だけで届くかを表にする。中に入らない。書かない。
+# 使い方: desks-check            (全部署)
+#         desks-check honsha     (1 部署)
+# 結果: 届いた = ok / 届かない = x (理由) 。未確認は未確認のまま出す。
+set -u
+HOSTS="${DESK_HOSTS:-$HOME/ai/ws/hosts.tsv}"
+[ -r "$HOSTS" ] || { echo "宛先表が無い: $HOSTS" >&2; exit 1; }
+only="${1:-}"
+printf '%-6s %-28s %-8s %s\n' 部署 宛先 結果 補足
+rc=0
+while IFS=$'\t' read -r key label target sock sess win; do
+  [ -z "$key" ] && continue; case "$key" in \#*) continue;; esac
+  [ -n "$only" ] && [ "$only" != "$key" ] && continue
+  if [[ "$target" == *100.x* ]]; then
+    printf '%-6s %-28s %-8s %s\n' "$label" "$target" 未確認 "宛先が例のまま"; rc=1; continue
+  fi
+  out=$(ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new "$target" 'echo ok' 2>&1)
+  if [ "$out" = "ok" ]; then
+    tm="tmux"; [ "$sock" != "-" ] && tm="tmux -L $sock"
+    has=$(ssh -o BatchMode=yes -o ConnectTimeout=8 "$target" "bash -lc \"$tm list-windows -a -F '#W' 2>/dev/null\"" 2>/dev/null | grep -cx "$win")
+    if [ "${has:-0}" -ge 1 ]; then note="窓 $win あり"; else note="届くが窓 $win が見えない (tmux 未起動か名前違い)"; fi
+    printf '%-6s %-28s %-8s %s\n' "$label" "$target" ok "$note"
+  else
+    printf '%-6s %-28s %-8s %s\n' "$label" "$target" x "$(echo "$out" | head -1 | cut -c1-70)"; rc=1
+  fi
+done < "$HOSTS"
+exit $rc

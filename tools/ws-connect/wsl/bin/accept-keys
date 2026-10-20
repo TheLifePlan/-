@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# accept-keys — 他部署から渡された公開鍵の行を、この WS の ~/.ssh/authorized_keys に足す。
+# 使い方: accept-keys            (貼り付け → Ctrl-D)
+#         accept-keys < keys.txt
+# ssh-ed25519 / ssh-rsa / ecdsa で始まる行だけ通す。同じ行は二度足さない。鍵の中身は表示しない。
+set -eu
+AK="$HOME/.ssh/authorized_keys"
+mkdir -p "$HOME/.ssh"; chmod 700 "$HOME/.ssh"; touch "$AK"; chmod 600 "$AK"
+added=0; skipped=0; bad=0
+while IFS= read -r line; do
+  line="${line%$'\r'}"
+  [ -z "$line" ] && continue
+  case "$line" in
+    ssh-ed25519\ *|ssh-rsa\ *|ecdsa-sha2-*|sk-ssh-ed25519@openssh.com\ *) ;;
+    *) bad=$((bad+1)); continue ;;
+  esac
+  if grep -qxF "$line" "$AK"; then skipped=$((skipped+1)); else printf '%s\n' "$line" >> "$AK"; added=$((added+1)); fi
+done
+echo "足した: $added / 既にあった: $skipped / 鍵でない行: $bad"
