@@ -59,7 +59,7 @@ def native_fallback(symbol):
     return '#{?#{e|<:#{client_width},80},' + row(16) + ',#{?#{e|<:#{client_width},120},' + row(20) + ',' + row(33) + '}}'
 
 
-def commands(config, home, python):
+def commands(config, home, python, version='3.7'):
     symbol, session, label = config['symbol'], config['session'], config['label']
     if symbol not in LABELS or not re.fullmatch(r'[A-Za-z0-9_-]+', session): raise ValueError('terminal-invalid')
     if any(ord(c) < 32 or ord(c) == 127 for c in label): raise ValueError('terminal-label-invalid')
@@ -80,13 +80,24 @@ def commands(config, home, python):
     render = status + args + " --current '#{window_id}' --width #{client_width} 2>/dev/null"
     # The v3 script chooses two/three slots; arrows and popup match HQ's layout.
     visible = '#{?#{!=:#(' + render + '),},#(' + render + '),' + native_fallback(symbol) + '}'
-    fmt = '#[range=control|0][' + label.replace('#', '##') + ']#[norange default] #[range=control|1 bold] ◀◀ #[norange default] ' + visible + ' #[align=right range=control|2 bold] ▶▶ #[norange default]'
+    legacy_mouse = version.startswith('3.6')
+    ranges = ('user|menu', 'user|prev', 'user|next') if legacy_mouse else ('control|0', 'control|1', 'control|2')
+    fmt = '#[range=' + ranges[0] + '][' + label.replace('#', '##') + ']#[norange default] #[range=' + ranges[1] + ' bold] ◀◀ #[norange default] ' + visible + ' #[align=right range=' + ranges[2] + ' bold] ▶▶ #[norange default]'
     rows += [['set-option', '-g', 'base-index', '1'], ['set-option', '-g', 'status-interval', '1'],
-             ['set-option', '-g', 'status-left', '[Studio ' + label + '] '],
-             ['bind-key', '-n', 'MouseDown1Control0', 'run-shell', '-b', menu],
-             ['bind-key', '-n', 'MouseDown1Control1', 'run-shell', '-b', status + args + ' --move -1'],
-             ['bind-key', '-n', 'MouseDown1Control2', 'run-shell', '-b', status + args + ' --move 1'],
-             ['set-option', '-g', 'status-format[0]', fmt]]
+             ['set-option', '-g', 'status-left', '[Studio ' + label + '] ']]
+    actions = [menu, status + args + ' --move -1', status + args + ' --move 1']
+    if legacy_mouse:
+        # tmux 3.6 has user ranges, but no MouseDown1Control* keys.
+        # A normal window-range click keeps the native mouse target (=).
+        dispatch = 'select-window -t ='
+        for name, command in reversed(list(zip(('menu', 'prev', 'next'), actions))):
+            dispatch = shlex.join(['if-shell', '-F', '#{==:#{mouse_status_range},' + name + '}',
+                                   shlex.join(['run-shell', '-b', command]), dispatch])
+        rows.append(['bind-key', '-n', 'MouseDown1Status', *shlex.split(dispatch)])
+    else:
+        for number, command in enumerate(actions):
+            rows.append(['bind-key', '-n', 'MouseDown1Control' + str(number), 'run-shell', '-b', command])
+    rows.append(['set-option', '-g', 'status-format[0]', fmt])
     if symbol == 'SM': rows.append(['bind-key', '-n', 'S-F1', 'run-shell', '-b', binary + ' ' + shlex.quote(str(scripts / 'menu-navigation.py')) + ' builder'])
     return rows
 
@@ -99,7 +110,8 @@ def main():
     home = Path.home(); config = terminal_config(home)
     tmux = shutil.which('tmux') or '/opt/homebrew/bin/tmux'
     base = [tmux, '-S', a.socket_path] if a.socket_path else [tmux, '-L', config['socket']]
-    rows = commands(config, home, sys.executable)  # Validate all actions before applying any.
+    version = subprocess.check_output(base + ['display-message', '-p', '#{version}'], text=True, timeout=10).strip()
+    rows = commands(config, home, sys.executable, version)  # Validate all actions before applying any.
     for row in rows: subprocess.run(base + row, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
     return 0
 
