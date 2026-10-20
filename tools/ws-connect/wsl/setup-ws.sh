@@ -44,6 +44,13 @@ done
 # 本社の表そのものは上書きしない。ここは将来WSで実行する配置処理。
 install -m 755 "$KIT/bin/ws-windows-conf.py" "$KIT/bin/menu.sh" "$KIT/bin/studio.sh" "$HOME/ai/bin/"
 install -m 644 "$KIT/builder/windows.conf.ws" "$KIT/builder/tmux.conf" "$HOME/ai/builder/"
+for helper in hq_head.py menu-navigation.py tmux-head-status-v2.py tmux-head-status-v3.py tmux-desk-menu.py tmux-desk-menu.sh tmux-terminal-config.py; do
+  install -m 755 "$KIT/bin/$helper" "$HOME/ai/bin/$helper"
+done
+if [ ! -e "$HOME/ai/terminal.conf" ] && [ ! -L "$HOME/ai/terminal.conf" ]; then
+  (umask 077; python3 "$HOME/ai/bin/tmux-terminal-config.py" --preset WS --socket win --session win > "$HOME/ai/terminal.conf")
+fi
+
 echo "   WS窓の生成台本を配置した。READMEのpython3行でwindows.confを作る。"
 mkdir -p "$WS/windows-terminal"
 install -m 644 "$KIT/windows-terminal/profiles.json" "$WS/windows-terminal/profiles.json"
