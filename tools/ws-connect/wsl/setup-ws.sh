@@ -28,7 +28,7 @@ else
 fi
 
 echo "== 4. 接続コマンドを入れる (~/ai/ws/bin)"
-install -m 755 "$KIT/bin/desk" "$KIT/bin/desks-check" "$KIT/bin/accept-keys" "$WS/bin/"
+install -m 755 "$KIT/bin/desk" "$KIT/bin/desks-check" "$KIT/bin/accept-keys" "$KIT/bin/ws-claude" "$WS/bin/"
 if [ ! -f "$WS/hosts.tsv" ]; then
   install -m 600 "$KIT/hosts.tsv.example" "$WS/hosts.tsv"
   echo "   宛先表の雛形を置いた: $WS/hosts.tsv  ← 100.x.x.x を本物に書き換える (Notion の手順書から)"
@@ -78,3 +78,4 @@ echo "B. $WS/hosts.tsv の 100.x.x.x を本物の宛先に書き換える。"
 echo "C. 本社から 4 部署の公開鍵をもらったら:  accept-keys   (貼って Ctrl-D)"
 echo "D. 確かめ:  desks-check     入る:  desk honsha | desk koujou | desk mini | desk book"
 echo "E. 新しいシェルを開くか  source ~/.bashrc  で desk が使える。"
+echo "F. この PC の机に Claude を入れる:  bash $KIT/install-ai.sh   (claude / codex を入れる。ログインは人の手)"

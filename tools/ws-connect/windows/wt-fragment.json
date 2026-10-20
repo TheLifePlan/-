@@ -27,6 +27,12 @@
       "tabTitle": "Book"
     },
     {
+      "name": "Claude (WSCL01)",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/ws-claude 01\"",
+      "icon": "✴️",
+      "tabTitle": "Claude"
+    },
+    {
       "name": "WS 机 (tmux win)",
       "commandline": "wsl.exe -d Ubuntu -- bash -lc \"tmux -L win attach -t win || exec bash -l\"",
       "icon": "🪟",

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# ws-claude — WS の机で Claude (WSCL01 Claudeコマンダー) を立てる・戻る。
+#   ws-claude          : tmux -L win の窓「WSCL01 Claudeコマンダー」があればそこへ着く。無ければ今の画面で claude を起こす
+#   ws-claude 02 / 03  : 助さん (WSCL02) / 格さん (WSCL03)
+# 権限は全部署と同じ (bypassPermissions・手順書 節 2)。--continue で前の会話に戻り、無ければ新しく始める。
+# 本社の windows.conf が入ったら studio.sh が同じ窓を立てるので、この台本はその前つなぎ・手で起こす時用。
+set -u
+n="${1:-01}"
+case "$n" in
+  01) name="WSCL01 Claudeコマンダー"; dir="$HOME/ai/builder" ;;
+  02) name="WSCL02 助さん";          dir="$HOME/ai/hands/02" ;;
+  03) name="WSCL03 格さん";          dir="$HOME/ai/hands/03" ;;
+  *)  echo "ws-claude: 01 / 02 / 03 のどれか" >&2; exit 1 ;;
+esac
+case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH";; esac
+command -v claude >/dev/null || { echo "ws-claude: claude が無い。先に  bash wsl/install-ai.sh" >&2; exit 1; }
+
+# 既に tmux の机に同じ名前の窓があれば、そこへ着く (二重に起こさない)
+if [ -z "${TMUX:-}" ] && tmux -L win list-windows -t win -F '#W' 2>/dev/null | grep -qxF "$name"; then
+  exec tmux -L win attach -t win \; select-window -t "win:$name"
+fi
+
+mkdir -p "$dir"; cd "$dir" || exit 1
+exec bash -lc "claude --permission-mode bypassPermissions --continue --name \"$name\" --remote-control \"$name\" \
+  || claude --permission-mode bypassPermissions --name \"$name\" --remote-control \"$name\"; exec bash -l"

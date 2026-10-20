@@ -25,9 +25,11 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
 | 場所 | 誰が・どこで | 何をする |
 | --- | --- | --- |
 | `windows/Install-WS.ps1` | ザラ・Windows の管理者 PowerShell | WSL2+Ubuntu、Windows Terminal、Tailscale を入れる。タブ fragment を置く。スリープを切る |
-| `windows/wt-fragment.json` | (Install が置く) | Windows Terminal に「本社・工場・ミニ・Book・WS 机・疎通」のタブ |
+| `windows/wt-fragment.json` | (Install が置く) | Windows Terminal に「本社・工場・ミニ・Book・Claude (WSCL01)・WS 机・疎通」のタブ |
 | `windows/Register-DesksOnLogon.ps1` | Windows の Claude・PowerShell | ログオン時に WS の机 (desks-startup.sh) が立つタスク。本社から写した後に |
 | `wsl/setup-ws.sh` | Windows の Claude・Ubuntu | 道具・置き場・鍵・ssh 設定・sshd・接続コマンドを一度に入れる |
+| `wsl/install-ai.sh` | ザラか Windows の Claude・Ubuntu | **claude / codex (/ grok があれば) を Ubuntu に入れる** (手順書 節 1 の 4)。ログインは人の手。無い物は未確認で先へ進む |
+| `wsl/bin/ws-claude` | Ubuntu | `ws-claude` で WSCL01 Claudeコマンダー を立てる (02/03 で助さん・格さん)。tmux の机に同じ窓があればそこへ着く |
 | `wsl/hosts.tsv.example` | → `~/ai/ws/hosts.tsv` に写して埋める | 部署ごとの宛先・tmux ソケット・セッション・着く窓 |
 | `wsl/bin/desk` | Ubuntu | `desk <部署>` で窓へ。`desk <部署> sh` で普通のシェル。`DESK_MOSH=1` で mosh |
 | `wsl/bin/desks-check` | Ubuntu | 4 部署の疎通を表に |
@@ -47,6 +49,15 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
    bash wsl/setup-ws.sh
    ```
    最後に出る **公開鍵の 1 行だけ** を本社 (SMCL01) へ渡す。続けて `~/ai/ws/hosts.tsv` の `100.x.x.x` を本物に書き換える (値は手順書 節 2・3 と各端末の頁)。
+   **この PC の机に Claude を入れる** (手順書 節 1 の 4) — 同じ Ubuntu で
+   ```bash
+   bash wsl/install-ai.sh      # claude / codex を入れる (Node 不要の公式インストーラ → 無理なら npm)
+   source ~/.bashrc
+   claude                      # ブラウザが開く → claude.ai のアカウントで許可 (人の手)
+   codex                       # 同じく ChatGPT でログイン
+   ws-claude                   # WSCL01 Claudeコマンダー の窓が立つ (Windows Terminal の「Claude」タブも同じ)
+   ```
+   Grok CLI の Linux 版が見つからなければ `~/ai/flags/ws-grok-unconfirmed.txt` が残り、GR の窓は立てない (手順書 節 5)。
 3. **節 3・本社側 (01)** — prod@Studio で
    ```bash
    MINI=dev@<ミニの100.> BOOK=zara@<Bookの100.> ./honsha/register-ws-key.sh "ssh-ed25519 AAAA... WS-xxx"
