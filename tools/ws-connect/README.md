@@ -2,7 +2,7 @@
 
 Notion「会社の仕組み・取り決め → 端末ごとの取り決め → Windows PC（WS）の手順書」(2026-10-20) を、
 貼って動く台本にしたもの。手順書の**節 1 (ザラの手)・節 2 (鍵と ssh の受け口)・節 3 (本社側)・節 4 (確かめ)** を担う。
-本社の file のコピー (scp) と机の起動表 (`~/ai/builder/windows.conf`) は手順書のとおり別に打つ。
+本社の補助台本のコピー (scp) は手順書に沿って行う。机の起動表は同梱の本社58行テンプレートからWS向けに生成する。
 
 **このリポジトリは公開**なので、Tailscale の宛先・利用者名・鍵はここに書かない。宛先は PC の中の `~/ai/ws/hosts.tsv` に置く。
 
@@ -36,6 +36,10 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
 | `wsl/bin/accept-keys` | Ubuntu | 他部署の公開鍵の行を authorized_keys に足す (鍵の行だけ通す・重複しない) |
 | `honsha/register-ws-key.sh` | 01・本社 prod@Studio | WS の公開鍵 1 行を 本社・工場 (ai@127.0.0.1)・ミニ・Book に足す |
 
+## キットを引いた後の場所
+
+この変更の配布ブランチは `claude/blissful-planck-hf89at`（リポジトリ `TheLifePlan/-`）。既にcloneした場合も、このブランチの最新版を使う。以下の相対パスのコマンドは、リポジトリ内の `tools/ws-connect` を開いてから実行する。Ubuntuでは `cd <cloneした場所>/tools/ws-connect`、PowerShellでも同じフォルダへ移動する。`setup-ws.sh` 実行後の `~/ai/bin/...` はどこからでも実行できる。
+
 ## 順番 (手順書の節に対応)
 
 1. **節 1・ザラの手** — Windows の管理者 PowerShell で
@@ -62,10 +66,24 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
    ```bash
    MINI=dev@<ミニの100.> BOOK=zara@<Bookの100.> ./honsha/register-ws-key.sh "ssh-ed25519 AAAA... WS-xxx"
    ```
-   さらに `~/ai/CONTACTS.md` に WS の 1 行、`~/ai/bin/tell-targets.tsv` に WS の 11 窓 (ソケット `win`・セッション `win`) を足す (手順書どおり・手で)。
+   さらに `~/ai/CONTACTS.md` に WS の 1 行、`~/ai/bin/tell-targets.tsv` に WS の生成された全窓 (ソケット `win`・セッション `win`) を足す (手順書どおり・手で)。
    4 部署の公開鍵を WS へ渡し、WS 側で `accept-keys` に貼る。
-4. **節 2 の続き** — 手順書の scp で本社の file を写し、`windows.conf` (11 窓) を書き、`studio.sh --create-only`。その後 `.\windows\Register-DesksOnLogon.ps1 -LinuxUser <Ubuntuの名前>`。
+4. **節 2 の続き** — 手順書の scp で必要な補助台本を写す。`setup-ws.sh` でWS向け台本を配置した後、次の1行で本社と同じ番号・順番の表を作る。
+   ```bash
+   python3 ~/ai/bin/ws-windows-conf.py > ~/ai/builder/windows.conf
+   ```
+   実行前に `command -v claude` と `command -v codex` の両方が通ることを確認する。既存表を再生成する時は、失敗で元の表を空にしないよう `python3 ~/ai/bin/ws-windows-conf.py > ~/ai/builder/windows.conf.new && mv ~/ai/builder/windows.conf.new ~/ai/builder/windows.conf` を使う。
+   手順書 節2の旧 `cat > windows.conf`（11行）は使わない。
+   続けて `~/ai/bin/studio.sh --create-only`。その後 `.\windows\Register-DesksOnLogon.ps1 -LinuxUser <Ubuntuの名前>`。
+   `studio.sh` は `tmux -L win`・セッション `win` を使い、既存セッションを作り直さない。表と番号・名前が違う場合は未変更のまま止まる。表のフォルダはHOME内だけ作る。CLIや補助台本が未設置なら窓はshellで残り、`~/ai/flags/ws-cli-unconfirmed.txt` に窓番号を残す。業務可能とは扱わない。
+   Grokが見つからない時はGR行を除外し、番号は詰めず `~/ai/flags/ws-grok-unconfirmed.txt` に残す。
 5. **節 4・確かめ** — Ubuntu で `desks-check`。4 行 `ok` + 「窓 … あり」になれば行きは済。本社から `ssh -o BatchMode=yes <WSの利用者>@<WSの100.> echo win-ok` が返れば戻りも済。
+
+## WSのメニューとFキー
+
+`wsl/bin/menu.sh` はWSの窓一覧から番号か記号で移動する。`SMCL01` のような本社記号の入力も `WSCL01` として探す。`wsl/builder/tmux.conf` はF1〜4=Codex、F5〜8=Claude、F9〜12=Grok、各組はコマンダー→さな→えま→みおの固定。HomeでWSメニュー。Grok未設置時のF9〜12は行先が無い。
+
+本社専用の動的status/head/hands切替helperは同梱しない。Shift+F1のhands09への動的移動も未対応。AI wrapperと各机の引継ぎ/規則、業務サービスの導入・稼働確認はこの窓配置だけでは完了しない。
 
 ## hosts.tsv の書き方
 

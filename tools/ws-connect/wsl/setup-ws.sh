@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # setup-ws.sh — WS (Windows PC) の WSL2 Ubuntu に「全部署へつなぐ仕組み」を入れる。
 # Notion「Windows PC（WS）の手順書」節 2 の、鍵・ssh の受け口・接続コマンドの部分を 1 回で行う。
-# 本社の file のコピー (scp) と机の起動表 (windows.conf) は、この台本ではやらない (手順書の続きを打つ)。
+# WS向けの窓生成・menu・tmux設定を同梱する。AI wrapper等の本社fileは別途手順書で写す。
 # 何度打っても同じ結果になる。秘密鍵は読まない・表示しない。
 set -eu
 KIT="$(cd "$(dirname "$0")" && pwd)"
 WS="$HOME/ai/ws"
 
-echo "== 1. 道具を入れる (tmux / openssh-server / mosh / python3)"
+echo "== 1. 道具を入れる (tmux / openssh-server / mosh / python3 / zsh)"
 if command -v apt-get >/dev/null; then
   sudo apt-get update -qq
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq tmux python3 openssh-server mosh >/dev/null
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq tmux python3 zsh openssh-server mosh >/dev/null
 fi
 
 echo "== 2. 置き場を作る"
@@ -40,6 +40,11 @@ for rc in ~/.bashrc ~/.zshrc; do
   [ -f "$rc" ] || continue
   grep -q 'ai/ws/bin' "$rc" || printf '\n# WS 接続キット\nexport PATH="$HOME/ai/ws/bin:$PATH"\n' >> "$rc"
 done
+
+# 本社の表そのものは上書きしない。ここは将来WSで実行する配置処理。
+install -m 755 "$KIT/bin/ws-windows-conf.py" "$KIT/bin/menu.sh" "$KIT/bin/studio.sh" "$HOME/ai/bin/"
+install -m 644 "$KIT/builder/windows.conf.ws" "$KIT/builder/tmux.conf" "$HOME/ai/builder/"
+echo "   WS窓の生成台本を配置した。READMEのpython3行でwindows.confを作る。"
 
 echo "== 5. ssh の設定 (~/.ssh/config に Host 別名を足す。既存の行は触らない)"
 CFG=~/.ssh/config; touch "$CFG"; chmod 600 "$CFG"
