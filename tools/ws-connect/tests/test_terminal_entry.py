@@ -35,7 +35,7 @@ class TerminalEntryTests(unittest.TestCase):
             command = e.argv_for(place, rows)
             self.assertEqual(command[:6], ['ssh', '-o', 'ConnectTimeout=8', '-o', 'ServerAliveInterval=30', '-t'])
             self.assertEqual(command[6], rows[place]['target'])
-            self.assertEqual(command[7:], remote)
+            self.assertEqual(command[7:], ['env', 'LANG=ja_JP.UTF-8', 'LC_ALL=ja_JP.UTF-8', *remote])
 
     def test_mosh_is_explicit_and_missing_mosh_falls_back_to_ssh(self):
         rows = e.read_hosts(self.table)

@@ -2,7 +2,7 @@
 
 Notion「会社の仕組み・取り決め → 端末ごとの取り決め → Windows PC（WS）の手順書」(2026-10-20) を、
 貼って動く台本にしたもの。手順書の**節 1 (ザラの手)・節 2 (鍵と ssh の受け口)・節 3 (本社側)・節 4 (確かめ)** を担う。
-本社の補助台本のコピー (scp) は手順書に沿って行う。机の起動表は同梱の本社58行テンプレートからWS向けに生成する。
+本社の補助台本は下の専用refresh段で取り直す。机の起動表は同梱の本社58行テンプレートからWS向けに生成する。
 
 **このリポジトリは公開**なので、Tailscale の宛先・利用者名・鍵はここに書かない。宛先は PC の中の `~/ai/ws/hosts.tsv` に置く。
 
@@ -69,7 +69,7 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
    ```
    さらに `~/ai/CONTACTS.md` に WS の 1 行、`~/ai/bin/tell-targets.tsv` に WS の生成された全窓 (ソケット `win`・セッション `win`) を足す (手順書どおり・手で)。
    4 部署の公開鍵を WS へ渡し、WS 側で `accept-keys` に貼る。
-4. **節 2 の続き** — 手順書の scp で必要な補助台本を写す。鍵が通った後、Ubuntuのbashで、HQを実宛先に置き換えてから `HQ='本社の利用者@Tailscale名'; scp "$HQ":ai/bin/{hisho-codex,hisho-leader-claude,builder-ai,health-ai,ayako-ai,yomimono-ai,youtube-ai}.sh "$HOME/ai/bin/"` の7本だけを写す。波括弧はローカルbashが7引数へ展開する。鍵/authなど他のファイルはこのscp対象に含めない。`setup-ws.sh` でWS向け台本を配置した後、次の1行で本社と同じ番号・順番の表を作る。
+4. **節 2 の続き** — 手順書の scp で必要な補助台本を写す。鍵が通った後、helperの配置は下の「補助台本の束」を使う。旧7本だけのscpではtell/guard等が欠けるため使わない。`setup-ws.sh` でWS向け台本を配置した後、次の1行で本社と同じ番号・順番の表を作る。
    ```bash
    python3 ~/ai/bin/ws-windows-conf.py > ~/ai/builder/windows.conf
    ```
@@ -79,6 +79,18 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
    `studio.sh` は `tmux -L win`・セッション `win` を使い、既存セッションを作り直さない。表と番号・名前が違う場合は未変更のまま止まる。表のフォルダはHOME内だけ作る。CLIや補助台本が未設置なら窓はshellで残り、`~/ai/flags/ws-cli-unconfirmed.txt` に窓番号を残す。業務可能とは扱わない。
    Grokが見つからない時はGR行を除外し、番号は詰めず `~/ai/flags/ws-grok-unconfirmed.txt` に残す。
 5. **節 4・確かめ** — Ubuntu で `desks-check`。4 行 `ok` + 「窓 … あり」になれば行きは済。本社から `ssh -o BatchMode=yes <WSの利用者>@<WSの100.> echo win-ok` が返れば戻りも済。
+
+## 補助台本の束（配置・以後の取り直し）
+
+キットの最新版を引き、`tools/ws-connect` からUbuntuのbashで実行する。本社の実宛先へ書き換えてから `bash wsl/refresh-helpers.sh --source '本社の利用者@Tailscale名'`。`~/ai/ws/hosts.tsv` のhonsha行が設定済みなら `bash wsl/refresh-helpers.sh` だけでもよい。配置後の更新も同じ1行。`setup-ws.sh` 全体をやり直さず、このhelper専用段だけを使う。
+
+公開キットは取り直しのレシピだけを持つ。本社の31ファイルを明示一覧でSCPし、WSの私有一時フォルダで全件検査してから配置する。フォルダ丸ごとのSCPはしない。本社の台本は変更しない。対象はtell/hand・秘書3種・ayako/health/新聞/YouTube/builder・desk/home-window/menu-navigationと必要module、guardのコード/固定hook設定だけ。guardのstate/alerts/diagnostics/backup/tests、鍵/auth/.env、会話、HQのhead/hands snapshotは写さない。
+
+WS用にHOME・記号WS・win/winを読み替え、tell宛先は既存58窓の表からAI56窓だけを生成する。メニューとshellは本文を誤投入しないためtellの宛先から除く。元のwindows.confや窓番号/名前/稼働AIは変更しない。YouTubeはHQのresume IDを使わず新規起動、builder/YouTubeの初回紙はWS本人の接続確認だけを行って待機する内容を生成する。必要最小の規則/STARTUPは無い場合だけ置き、既存のWS規則は残す。healthの承認印は作らない。
+
+head/hands/snapshotが全て無いWSだけ、今回本社コマンダーが確認した `claude/claude` でWS独自generationを初期化する。既存が1つでもあれば上書きしない。役割の初期値であり、費用/外部送信/本番の権限を広げない。
+
+専用段はレシピも `~/ai/ws/bin/refresh-hq-helpers` へ配置する。配置だけの確認は `python3 ~/ai/ws/bin/refresh-hq-helpers --inspect`。ファイル名/件数の確認で、AI・tell・hand・guard巡回は起動しない。稼働窓をまとめて再起動しない。未起動窓の立て直しは担当の実プロセス確認後に対象だけ行う。導入済みと、実際に各窓が使えることは別に検収する。
 
 ## WSのメニューとFキー
 

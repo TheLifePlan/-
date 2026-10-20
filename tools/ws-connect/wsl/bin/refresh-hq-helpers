@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""Fetch an explicit source-only HQ allowlist and adapt it privately on WS."""
+import argparse
+import ast
+import csv
+import io
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import subprocess
+import tempfile
+
+BIN_NAMES = ('tell.sh', 'tell.py', 'hand.sh', 'hisho-codex.sh', 'hisho-leader-claude.sh',
+    'hisho-grok.sh', 'ayako-ai.sh', 'health-ai.sh', 'yomimono-ai.sh', 'youtube-ai.sh',
+    'builder-ai.sh', 'menu-navigation.py', 'desk.sh', 'home-window.sh', 'desk-config.py',
+    'hq_head.py', 'youtube-direct.py', 'youtube_endpoint.py', 'quota-board.py')
+GUARD_NAMES = ('guard-paper.sh', 'guard-engine.py', 'guard-patrol.sh', 'guarded-claude.sh',
+    'guarded-claude.py', 'external-input.mjs', 'wrap-external.py', 'external-tool-hook.py',
+    'external_envelope.py', 'external-input-hooks.json', 'install-three-lines-rules.py')
+ALLOWLIST = tuple('ai/bin/' + name for name in BIN_NAMES) + tuple('ai/guard/' + name for name in GUARD_NAMES) + ('ai/desks-prod.tsv',)
+UUID = r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}'
+STARTUP = '# WS 初回確認\nこの窓本人の接続metadataだけ確認して待機する。実業務依頼はまだ無い。旧会話・顧客・認証・鍵・外部送信・本番は扱わない。\n'
+
+
+def regular(path):
+    if any(p.is_symlink() for p in (path, *path.parents)):
+        raise ValueError('source-link-refused')
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(fd, 'rb') as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_size > 2 * 1024 * 1024:
+            raise ValueError('source-file-invalid')
+        return stream.read().decode('utf-8')
+
+
+def safe_config(text):
+    value = json.loads(text)
+    if not isinstance(value, dict) or set(value) != {'hooks'}:
+        raise ValueError('hooks-config-invalid')
+    # Only fixed hook code configuration, never settings/auth/env values.
+    for key in re.findall(r'"([^"\\]+)"\s*:', text):
+        if re.search(r'password|token|secret|api.?key|credential|env', key, re.I):
+            raise ValueError('hooks-secret-key-refused')
+    if re.search(r'(?<![\w-])sk-[A-Za-z0-9_-]{16,}|-----BEGIN|eyJ[\w-]{20,}\.', text):
+        raise ValueError('hooks-secret-value-refused')
+    return value
+
+
+def portable(relative, text, home):
+    if relative.endswith('external-input-hooks.json'):
+        safe_config(text)
+    # No resume lookup: HQ's conversation identity is never used on WS.
+    text = re.sub(r'--resume\s+' + UUID + r'\s*', '', text)
+    text = re.sub(r'(?<![\w-])resume\s+' + UUID + r'\s*', '', text)
+    text = re.sub(r'(?<!\S)--continue(?=\s|$)', '', text)
+    for before, after in (('/Users/prod/.local/bin/claude', 'claude'),
+                          ('/Users/prod/.grok/bin/grok', 'grok'),
+                          ('/opt/homebrew/bin/codex', 'codex'),
+                          ('/opt/homebrew/bin/python3', 'python3'),
+                          ('/opt/homebrew/bin/tmux', 'tmux')):
+        text = text.replace(before, after)
+    text = text.replace('/Users/prod', str(home)).replace('exec zsh -l', 'exec bash -l').replace('exec /bin/zsh -l', 'exec /bin/bash -l')
+    # Routing modules remain multi-terminal; old desk/guard/launchers are WS-local.
+    if relative not in ('ai/bin/hq_head.py', 'ai/bin/menu-navigation.py', 'ai/bin/tell.py',
+                        'ai/bin/youtube-direct.py', 'ai/bin/youtube_endpoint.py'):
+        text = re.sub(r'\bSM(?=(?:CL|CD|GR|MO|EN|SH)(?:[0-9]|[\x27\"])|MENU\b|SH\b)', 'WS', text)
+        text = re.sub(r"(['\"])-L\1\s*,\s*(['\"])main\2", "'-L', 'win'", text).replace('studio-main', 'win')
+        text = text.replace('SM(?:', 'WS(?:')
+    if relative == 'ai/bin/tell.py':
+        text = text.replace("('SM', 'MD', 'SF', 'BV')", "('SM', 'WS', 'MD', 'SF', 'BV')")
+        text = text.replace('(?:SM|MD|SF|BV|BM)', '(?:SM|WS|MD|SF|BV|BM)')
+        text = text.replace("startswith('SMCL01 ')", "startswith('WSCL01 ')")
+    if relative == 'ai/bin/desk-config.py':
+        text = text.replace('SMCL', 'WSCL').replace('SMCD', 'WSCD').replace('SMGR', 'WSGR')
+    if relative == 'ai/bin/home-window.sh':
+        text = text.replace('${1:-main}', '${1:-win}')
+    if relative == 'ai/bin/youtube-ai.sh':
+        text = text.replace('ai/codex/jobs/_tmp/youtube-studio-start-goemon/$family-startup.md', 'ai/ws/startup/youtube-$family.md')
+    if relative == 'ai/bin/builder-ai.sh':
+        text = text.replace('ai/codex/jobs/_tmp/system-grok-builder-goemon/$family-09-startup.md', 'ai/ws/startup/builder-$family.md')
+    if relative.endswith('.sh'):
+        lines = text.splitlines(keepends=True)
+        lines.insert(1, 'export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$HOME/.grok/bin:$HOME/ai/bin:/usr/local/bin:/usr/bin:/bin:$PATH"\n')
+        text = ''.join(lines)
+    if relative.endswith('.py'):
+        ast.parse(text, filename=relative, feature_version=(3, 9))
+    if relative.endswith('.sh'):
+        subprocess.run(['/bin/bash', '-n'], input=text, text=True, check=True, capture_output=True)
+    return text
+
+
+def write(path, text, mode=0o755, missing=False):
+    if any(p.is_symlink() for p in (path, *path.parents)):
+        raise ValueError('destination-link-refused')
+    if missing and path.exists():
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, name = tempfile.mkstemp(prefix='.ws-helper-', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(text); stream.flush(); os.fsync(stream.fileno())
+        os.chmod(name, mode); os.replace(name, path)
+    finally:
+        try: os.unlink(name)
+        except FileNotFoundError: pass
+
+
+def tell_table(home):
+    # Existing windows.conf is authoritative; never replace/move/restart its windows.
+    rows = []
+    for raw in regular(home / 'ai/builder/windows.conf').splitlines():
+        if not raw or raw.startswith('#'): continue
+        fields = raw.split('|', 3)
+        if len(fields) != 4 or not fields[0].isdigit(): raise ValueError('window-table-invalid')
+        name = fields[1]
+        if not re.match(r'^WS(?:CL|CD|GR)[0-9]{2} ', name): continue
+        rows.append({'name': name, 'terminal': 'WS', 'socket': 'win', 'session': 'win', 'method': 'tmux',
+                     'enabled': '1', 'host': '', 'file_dir': str(home / 'ai/inbox/_in'),
+                     'commander': '1' if re.match(r'^WS(?:CL|CD|GR)01 ', name) else '0', 'aliases': name.split()[0]})
+    if not rows or len({r['name'] for r in rows}) != len(rows): raise ValueError('window-targets-invalid')
+    output = io.StringIO(); writer = csv.DictWriter(output, fieldnames=list(rows[0]), delimiter='\t', lineterminator='\n')
+    writer.writeheader(); writer.writerows(rows)
+    return output.getvalue(), rows
+
+
+def initialize_routing(home):
+    flags = home / 'ai/flags'
+    paths = [flags / name for name in ('head.conf', 'hands.conf', 'routing-snapshot.json')]
+    if any(path.exists() or path.is_symlink() for path in paths):
+        return 'preserved'
+    # Authorized initial values: HQ commander verified claude/claude for this rollout.
+    # Generate a WS-local generation; never copy HQ snapshots or identity IDs.
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('ws_helper_head', home / 'ai/bin/hq_head.py')
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    module.atomic_routing(home, 'claude', 'claude')
+    return 'initialized-claude-claude'
+
+
+def install(source, home):
+    home = Path(home).resolve(); source = Path(source).resolve()
+    if not re.fullmatch(r'/[A-Za-z0-9_./-]+', str(home)): raise ValueError('home-path-invalid')
+    config = home / 'ai/terminal.conf'
+    if config.exists() and json.loads(regular(config)).get('symbol') != 'WS':
+        raise ValueError('not-ws-terminal')
+    converted = {rel: portable(rel, regular(source / rel), home) for rel in ALLOWLIST}
+    table, rows = tell_table(home)
+    # Validate the complete source set before publishing anything.
+    for rel, text in converted.items(): write(home / rel, text, 0o644 if rel.endswith(('.json', '.tsv')) else 0o755)
+    write(home / 'ai/bin/guard-paper.sh', '#!/bin/sh\nexec "$HOME/ai/guard/guard-paper.sh" "$@"\n')
+    write(home / 'ai/bin/tell-targets.tsv', table, 0o600)
+    write(home / 'ai/terminal.conf', json.dumps({'symbol': 'WS', 'socket': 'win', 'session': 'win', 'label': 'WS', 'menu': 'WSMENU'}) + '\n', 0o600, missing=True)
+    for kind in ('youtube', 'builder'):
+        for family in ('codex', 'claude', 'grok'):
+            write(home / ('ai/ws/startup/' + kind + '-' + family + '.md'), STARTUP, 0o600, missing=True)
+    folders = ['ai/hisho/codex/' + n for n in ('04','05','06')] + ['ai/hisho/grok/' + n for n in ('04','05','06')] + ['ai/hisho/claude/07']
+    folders += ['ai/desks/' + desk + '/' + family for desk in ('ayako','yomimono') for family in ('claude','codex','grok')]
+    folders += ['Code/youtube', 'Code/thelifeplan-builder-codex', 'Code/thelifeplan-builder-grok']
+    for folder in folders:
+        for name in ('AGENTS.md','CLAUDE.md','GROK.md','STARTUP.md'):
+            write(home / folder / name, STARTUP, 0o600, missing=True)
+    routing = initialize_routing(home)
+    return {'files': len(converted) + 2, 'targets': len(rows), 'routing': routing}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--inspect', action='store_true')
+    parser.add_argument('--source'); parser.add_argument('--source-tree', type=Path); parser.add_argument('--home', type=Path, default=Path.home())
+    args = parser.parse_args()
+    if args.inspect:
+        paths = ALLOWLIST + ('ai/bin/guard-paper.sh', 'ai/bin/tell-targets.tsv')
+        missing = [rel for rel in paths if not (args.home / rel).is_file() or (args.home / rel).is_symlink()]
+        print(json.dumps({'expected_sources': len(ALLOWLIST), 'missing': missing, 'windows_unchanged': True}))
+        return int(bool(missing))
+    if args.source_tree:
+        result = install(args.source_tree, args.home)
+    else:
+        target = args.source
+        if target is None:
+            with (args.home / 'ai/ws/hosts.tsv').open() as f:
+                rows = [line.rstrip('\n').split('\t') for line in f if line.strip() and not line.startswith('#')]
+            matches = [row[2] for row in rows if len(row) == 6 and row[0] == 'honsha']
+            if len(matches) != 1: raise ValueError('hq-route-unconfirmed')
+            target = matches[0]
+        if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_-]*@[A-Za-z0-9][A-Za-z0-9.-]*', target): raise ValueError('hq-route-invalid')
+        with tempfile.TemporaryDirectory(prefix='ws-hq-helpers-') as folder:
+            stage = Path(folder).resolve()
+            for relative in ALLOWLIST:
+                dest = stage / relative; dest.parent.mkdir(parents=True, exist_ok=True)
+                subprocess.run(['scp', '-q', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=8', target + ':' + relative, str(dest)], check=True, capture_output=True, timeout=30)
+            result = install(stage, args.home)
+    print('WS helpers配置: files=' + str(result['files']) + ' targets=' + str(result['targets']) + '。既存窓は変更していません。')
+    return 0
+
+
+if __name__ == '__main__':
+    try: raise SystemExit(main())
+    except Exception:
+        print('WS helpers未完了: 接続・許可済みsource・既存WS表を確認してください。', file=__import__('sys').stderr)
+        raise SystemExit(1)

@@ -83,6 +83,7 @@ def argv_for(place, hosts, mosh=False, which=shutil.which):
         remote = ['/opt/homebrew/bin/tmux', 'attach', '-t', session]
     else:
         raise Failure('place-invalid')
+    remote = ['env', 'LANG=ja_JP.UTF-8', 'LC_ALL=ja_JP.UTF-8', *remote]
     if mosh and which('mosh'):
         return ['mosh', row['target'], '--', *remote]
     return ['ssh', '-o', 'ConnectTimeout=8', '-o', 'ServerAliveInterval=30', '-t', row['target'], *remote]

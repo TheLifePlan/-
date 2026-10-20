@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # setup-ws.sh — WS (Windows PC) の WSL2 Ubuntu に「全部署へつなぐ仕組み」を入れる。
 # Notion「Windows PC（WS）の手順書」節 2 の、鍵・ssh の受け口・接続コマンドの部分を 1 回で行う。
-# WS向けの窓生成・menu・tmux設定を同梱する。AI wrapper等の本社fileは別途手順書で写す。
+# WS向けの窓生成・menu・tmux設定を同梱する。本社helperは鍵疎通後に専用refresh段で取り直す。
 # 何度打っても同じ結果になる。秘密鍵は読まない・表示しない。
 set -eu
 KIT="$(cd "$(dirname "$0")" && pwd)"
@@ -29,6 +29,7 @@ fi
 
 echo "== 4. 接続コマンドを入れる (~/ai/ws/bin)"
 install -m 755 "$KIT/bin/desk" "$KIT/bin/desks-check" "$KIT/bin/accept-keys" "$KIT/bin/ws-claude" "$WS/bin/"
+install -m 755 "$KIT/bin/refresh-hq-helpers" "$WS/bin/refresh-hq-helpers"
 if [ ! -f "$WS/hosts.tsv" ]; then
   install -m 600 "$KIT/hosts.tsv.example" "$WS/hosts.tsv"
   echo "   宛先表の雛形を置いた: $WS/hosts.tsv  ← 100.x.x.x を本物に書き換える (Notion の手順書から)"
@@ -94,4 +95,5 @@ echo "B. $WS/hosts.tsv の 100.x.x.x を本物の宛先に書き換える。"
 echo "C. 本社から 4 部署の公開鍵をもらったら:  accept-keys   (貼って Ctrl-D)"
 echo "D. 確かめ:  desks-check     入る:  desk honsha | desk koujou | desk mini | desk book"
 echo "E. 新しいシェルを開くか  source ~/.bashrc  で desk が使える。"
-echo "F. この PC の机に Claude を入れる:  bash $KIT/install-ai.sh   (claude / codex を入れる。ログインは人の手)"
+echo "F. 鍵疎通後のhelper配置/更新だけは bash wsl/refresh-helpers.sh（README参照）。setup全体を再実行する必要はない。"
+echo "G. この PC の机に Claude を入れる:  bash $KIT/install-ai.sh   (claude / codex を入れる。ログインは人の手)"
