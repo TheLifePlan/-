@@ -91,6 +91,9 @@ def make_template(source, source_home=HOME):
         if directory == '~' or directory.startswith('~/'):
             directory = '$HOME' + directory[1:]
         command = command.replace(str(source_home), '$HOME')
+        # WS uses Ubuntu's configured bash, including the retained shell window.
+        command = re.sub(r'\bexec[ \t]+zsh[ \t]+-l\b', 'exec bash -l', command)
+        command = re.sub(r'\bzsh[ \t]+-c\b', 'bash -c', command)
         output.append([number, name, directory, command])
     if [row[0] for row in original] != [row[0] for row in output] or len(original) != len(output):
         raise Failure('template-window-count-changed')

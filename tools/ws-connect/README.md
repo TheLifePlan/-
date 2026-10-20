@@ -28,7 +28,7 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
 | `windows/wt-fragment.json` | (Install が置く) | Windows Terminal に「本社・工場・ミニ・Book・Claude (WSCL01)・WS 机・疎通」のタブ |
 | `windows/Register-DesksOnLogon.ps1` | Windows の Claude・PowerShell | ログオン時に WS の机 (desks-startup.sh) が立つタスク。本社から写した後に |
 | `wsl/setup-ws.sh` | Windows の Claude・Ubuntu | 道具・置き場・鍵・ssh 設定・sshd・接続コマンドを一度に入れる |
-| `wsl/install-ai.sh` | ザラか Windows の Claude・Ubuntu | **claude / codex (/ grok があれば) を Ubuntu に入れる** (手順書 節 1 の 4)。ログインは人の手。無い物は未確認で先へ進む |
+| `wsl/install-ai.sh` | ザラか Windows の Claude・Ubuntu | **claude / codex / grok を Ubuntu に入れる** (手順書 節 1 の 4)。ログインは人の手。無い物は未確認で先へ進む |
 | `wsl/bin/ws-claude` | Ubuntu | `ws-claude` で WSCL01 Claudeコマンダー を立てる (02/03 で助さん・格さん)。tmux の机に同じ窓があればそこへ着く |
 | `wsl/hosts.tsv.example` | → `~/ai/ws/hosts.tsv` に写して埋める | 部署ごとの宛先・tmux ソケット・セッション・着く窓 |
 | `wsl/bin/desk` | Ubuntu | `desk <部署>` で窓へ。`desk <部署> sh` で普通のシェル。`DESK_MOSH=1` で mosh |
@@ -53,22 +53,23 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
    bash wsl/setup-ws.sh
    ```
    最後に出る **公開鍵の 1 行だけ** を本社 (SMCL01) へ渡す。続けて `~/ai/ws/hosts.tsv` の `100.x.x.x` を本物に書き換える (値は手順書 節 2・3 と各端末の頁)。
-   **この PC の机に Claude を入れる** (手順書 節 1 の 4) — 同じ Ubuntu で
+   **この PC の机に3つのCLIを入れる** (手順書 節 1 の 4) — 同じ Ubuntu で
    ```bash
-   bash wsl/install-ai.sh      # claude / codex を入れる (Node 不要の公式インストーラ → 無理なら npm)
+   bash wsl/install-ai.sh      # claude / codex / grok を入れる
    source ~/.bashrc
    claude                      # ブラウザが開く → claude.ai のアカウントで許可 (人の手)
    codex                       # 同じく ChatGPT でログイン
+   grok                        # 本人がブラウザで許可してログイン
    ws-claude                   # WSCL01 Claudeコマンダー の窓が立つ (Windows Terminal の「Claude」タブも同じ)
    ```
-   Grok CLI の Linux 版が見つからなければ `~/ai/flags/ws-grok-unconfirmed.txt` が残り、GR の窓は立てない (手順書 節 5)。
+   Grok CLIのLinux版は[公式installer](https://x.ai/cli/install.sh)で入る。`install-ai.sh` は無ければ `curl -fsSL https://x.ai/cli/install.sh | bash` を実行し、`~/.grok/bin` を今と新しいshellのPATHへ追加する。失敗した時だけ `~/ai/flags/ws-grok-unconfirmed.txt` を残す。ログインは本人が `grok` を起動してブラウザで許可する（手順書 節1の4・節5）。Grokが入れば変換表はGR11窓を含む58行。
 3. **節 3・本社側 (01)** — prod@Studio で
    ```bash
    MINI=dev@<ミニの100.> BOOK=zara@<Bookの100.> ./honsha/register-ws-key.sh "ssh-ed25519 AAAA... WS-xxx"
    ```
    さらに `~/ai/CONTACTS.md` に WS の 1 行、`~/ai/bin/tell-targets.tsv` に WS の生成された全窓 (ソケット `win`・セッション `win`) を足す (手順書どおり・手で)。
    4 部署の公開鍵を WS へ渡し、WS 側で `accept-keys` に貼る。
-4. **節 2 の続き** — 手順書の scp で必要な補助台本を写す。`setup-ws.sh` でWS向け台本を配置した後、次の1行で本社と同じ番号・順番の表を作る。
+4. **節 2 の続き** — 手順書の scp で必要な補助台本を写す。鍵が通った後、Ubuntuのbashで、HQを実宛先に置き換えてから `HQ='本社の利用者@Tailscale名'; scp "$HQ":ai/bin/{hisho-codex,hisho-leader-claude,builder-ai,health-ai,ayako-ai,yomimono-ai,youtube-ai}.sh "$HOME/ai/bin/"` の7本だけを写す。波括弧はローカルbashが7引数へ展開する。鍵/authなど他のファイルはこのscp対象に含めない。`setup-ws.sh` でWS向け台本を配置した後、次の1行で本社と同じ番号・順番の表を作る。
    ```bash
    python3 ~/ai/bin/ws-windows-conf.py > ~/ai/builder/windows.conf
    ```
@@ -122,7 +123,7 @@ book	Book	zara@100.…	-	zara	BVCL01
 ## 分かっていないこと (手順書 節 5 と同じ)
 
 - WSL の sshd へ Tailscale の `100.` 宛てで届くかは、Windows 側 Tailscale だけでは通らないことがある。届かなければ Ubuntu の中にも Linux 版 Tailscale を入れる (`curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`) のが 01 の候補。届いた方だけ残す。
-- Grok CLI の Linux 版の有無。`command -v grok` で確かめる。
+- Grok CLIのLinux版はある（[公式installer](https://x.ai/cli/install.sh)）。WSでの導入結果とブラウザログインは実機確認する。
 - 工場の tmux セッション名。`desk koujou` が違う部屋に着いたら hosts.tsv の 5 列目に名前を書く。
 
 ## 決まりとの対応

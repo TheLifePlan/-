@@ -82,12 +82,21 @@ else
 fi
 
 echo "== 4. Grok CLI (grok)"
+case ":$PATH:" in *":$HOME/.grok/bin:"*) ;; *) export PATH="$HOME/.grok/bin:$PATH";; esac
+for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+  touch "$rc"
+  grep -Fqx 'export PATH="$HOME/.grok/bin:$PATH"' "$rc" || printf '\n# Grok CLI\nexport PATH="$HOME/.grok/bin:$PATH"\n' >> "$rc"
+done
 if command -v grok >/dev/null; then
+  rm -f "$FLAGS/ws-grok-unconfirmed.txt"
   ok "既にある: $(command -v grok)"
+elif (set -o pipefail; curl -fsSL https://x.ai/cli/install.sh | bash >/dev/null 2>&1) \
+    && command -v grok >/dev/null; then
+  rm -f "$FLAGS/ws-grok-unconfirmed.txt"
+  ok "入れた: $(command -v grok)"
 else
-  # 手順書 節 5: Grok CLI の Linux 版があるかは未確認。入れ方を決めつけない。無ければ GR の 3 窓は立てない。
-  todo "grok が無い。4〜6 (GR) の窓はまだ書かない (手順書 節 5)"
-  echo "未確認: grok が無い。4〜6 はまだ書かない $(date +%F)" > "$FLAGS/ws-grok-unconfirmed.txt"
+  todo "grok の公式インストーラが通らなかった。GRの11窓は未確認"
+  echo "未確認: grok install失敗 $(date +%F)" > "$FLAGS/ws-grok-unconfirmed.txt"
 fi
 
 echo
@@ -101,5 +110,6 @@ echo "A. 新しいシェルを開くか  source ~/.bashrc  を打つ (PATH を�
 echo "B. claude と打つ → 「Claude account with subscription」を選ぶ → ブラウザが開いたら claude.ai のアカウントで許可。"
 echo "   ブラウザが開かない時は、画面に出た URL を Windows のブラウザに貼る。"
 echo "C. codex と打つ → Sign in with ChatGPT → 同じくブラウザで許可。"
-echo "D. 済んだら  ws-claude  で WSCL01 Claudeコマンダー の窓が立つ (Windows Terminal の「Claude (WSCL01)」タブも同じ)。"
-echo "E. 本社の file (CLAUDE.md・ZARA-KIJUN.md など) の scp と windows.conf は手順書 節 2 のとおり別に打つ。"
+echo "D. grok と打つ → ブラウザで本人が許可する（ログインは自動で行わない）。"
+echo "E. 済んだら  ws-claude  で WSCL01 Claudeコマンダー の窓が立つ (Windows Terminal の「Claude (WSCL01)」タブも同じ)。"
+echo "F. 本社の file (CLAUDE.md・ZARA-KIJUN.md など) の scp と windows.conf は手順書 節 2 のとおり別に打つ。"
