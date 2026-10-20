@@ -1,48 +1,49 @@
 {
   "$help": "https://aka.ms/terminal-documentation",
-  "$schema": "https://aka.ms/terminal-profiles-schema",
   "profiles": [
     {
-      "name": "本社 (SMCL01)",
-      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desk honsha\"",
-      "icon": "🏢",
+      "guid": "{4ce7dd61-f5b5-5a52-9a9b-a2b8801eb0b6}",
+      "name": "WS 机",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"tmux -L win attach -t win || tmux -L win new -s win\"",
+      "tabTitle": "WS 机"
+    },
+    {
+      "guid": "{84e6c613-a93e-5c82-8196-34caa315e830}",
+      "name": "本社",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/terminal-entry honsha\"",
       "tabTitle": "本社"
     },
     {
-      "name": "工場 (SFCL01)",
-      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desk koujou\"",
-      "icon": "🏭",
+      "guid": "{6e4f43d9-9839-509e-a257-648191c70570}",
+      "name": "工場",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/terminal-entry koujou\"",
       "tabTitle": "工場"
     },
     {
-      "name": "ミニ (MDCL01)",
-      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desk mini\"",
-      "icon": "🖥️",
+      "guid": "{3e46a072-ee01-52bc-8d25-09788c4b98e5}",
+      "name": "ミニ",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/terminal-entry mini\"",
       "tabTitle": "ミニ"
     },
     {
-      "name": "Book (BVCL01)",
-      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desk book\"",
-      "icon": "💻",
+      "guid": "{154749e6-46ce-568f-9ce6-20b082573f9d}",
+      "name": "Book",
+      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/terminal-entry book\"",
       "tabTitle": "Book"
     },
     {
       "name": "Claude (WSCL01)",
       "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/ws-claude 01\"",
       "icon": "✴️",
-      "tabTitle": "Claude"
-    },
-    {
-      "name": "WS 机 (tmux win)",
-      "commandline": "wsl.exe -d Ubuntu -- bash -lc \"tmux -L win attach -t win || exec bash -l\"",
-      "icon": "🪟",
-      "tabTitle": "WS"
+      "tabTitle": "Claude",
+      "guid": "{ae4e5db8-e778-57e1-ad44-8c70234990b4}"
     },
     {
       "name": "部署の疎通 (desks-check)",
       "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/desks-check; echo; read -p 'Enter で閉じる'\"",
       "icon": "✅",
-      "tabTitle": "疎通"
+      "tabTitle": "疎通",
+      "guid": "{48e72a34-ae08-5841-8e04-c8754e7de93a}"
     }
   ]
 }

@@ -1,0 +1,43 @@
+{
+  "defaultProfile": "{4ce7dd61-f5b5-5a52-9a9b-a2b8801eb0b6}",
+  "profiles": {
+    "list": [
+      {
+        "guid": "{4ce7dd61-f5b5-5a52-9a9b-a2b8801eb0b6}",
+        "name": "WS 机",
+        "commandline": "wsl.exe -d Ubuntu -- bash -lc \"tmux -L win attach -t win || tmux -L win new -s win\"",
+        "tabTitle": "WS 机"
+      },
+      {
+        "guid": "{84e6c613-a93e-5c82-8196-34caa315e830}",
+        "name": "本社",
+        "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/terminal-entry honsha\"",
+        "tabTitle": "本社"
+      },
+      {
+        "guid": "{6e4f43d9-9839-509e-a257-648191c70570}",
+        "name": "工場",
+        "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/terminal-entry koujou\"",
+        "tabTitle": "工場"
+      },
+      {
+        "guid": "{3e46a072-ee01-52bc-8d25-09788c4b98e5}",
+        "name": "ミニ",
+        "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/terminal-entry mini\"",
+        "tabTitle": "ミニ"
+      },
+      {
+        "guid": "{154749e6-46ce-568f-9ce6-20b082573f9d}",
+        "name": "Book",
+        "commandline": "wsl.exe -d Ubuntu -- bash -lc \"~/ai/ws/bin/terminal-entry book\"",
+        "tabTitle": "Book"
+      }
+    ]
+  },
+  "keybindings": [
+    {
+      "id": null,
+      "keys": "f11"
+    }
+  ]
+}

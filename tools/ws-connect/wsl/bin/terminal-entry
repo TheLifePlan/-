@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""Windows Terminal entry points. Destinations come only from WS's private table."""
+import argparse
+import ipaddress
+import os
+from pathlib import Path
+import re
+import shutil
+import stat
+import sys
+
+PLACES = ('honsha', 'koujou', 'mini', 'book')
+SAFE_NAME = re.compile(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,79}')
+TARGET = re.compile(r'([A-Za-z_][A-Za-z0-9_-]{0,63})@([A-Za-z0-9][A-Za-z0-9.-]{0,252})')
+
+
+class Failure(Exception):
+    pass
+
+
+def read_hosts(path):
+    path = Path(path).absolute()
+    if '..' in path.parts:
+        raise Failure('hosts-path-invalid')
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for part in path.parts[1:-1]:
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        handle = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
+        with os.fdopen(handle, 'r', encoding='utf-8') as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise Failure('hosts-not-regular')
+            raw = stream.read(65537)
+            if len(raw) > 65536:
+                raise Failure('hosts-too-large')
+    finally:
+        os.close(fd)
+    rows, targets = {}, set()
+    for line in raw.splitlines():
+        if not line.strip() or line.lstrip().startswith('#'):
+            continue
+        fields = line.split('\t')
+        if len(fields) != 6 or any(ord(c) < 32 or ord(c) == 127 for field in fields for c in field):
+            raise Failure('hosts-six-fields-required')
+        place, label, target, socket, session, window = fields
+        match = TARGET.fullmatch(target)
+        if place not in PLACES or not label or not match:
+            raise Failure('hosts-target-invalid')
+        user, host = match.groups()
+        if host.endswith('.') or '..' in host or '100.x' in host:
+            raise Failure('hosts-target-invalid')
+        if re.fullmatch(r'[0-9.]+', host):
+            try:
+                if ipaddress.ip_address(host) not in ipaddress.ip_network('100.64.0.0/10'):
+                    raise Failure('hosts-target-not-tailscale')
+            except ValueError:
+                raise Failure('hosts-target-invalid') from None
+        if place in rows or target.lower() in targets:
+            raise Failure('hosts-duplicate-target')
+        if any(value != '-' and not SAFE_NAME.fullmatch(value) for value in (socket, session, window)):
+            raise Failure('hosts-metadata-invalid')
+        rows[place] = {'target': target, 'user': user, 'session': session}
+        targets.add(target.lower())
+    return rows
+
+
+def argv_for(place, hosts, mosh=False, which=shutil.which):
+    if place not in hosts:
+        raise Failure('hosts-place-missing')
+    row = hosts[place]
+    if place == 'honsha':
+        remote = ['/opt/homebrew/bin/tmux', '-L', 'main', 'attach', '-t', 'studio-main']
+    elif place == 'koujou':
+        remote = ['/Users/' + row['user'] + '/bin/factory-remote.sh']
+    elif place == 'mini':
+        remote = ['tmux', '-L', 'mini', 'attach', '-t', 'mini']
+    elif place == 'book':
+        session = row['session']
+        if session == '-' or not SAFE_NAME.fullmatch(session):
+            raise Failure('book-session-missing')
+        remote = ['/opt/homebrew/bin/tmux', 'attach', '-t', session]
+    else:
+        raise Failure('place-invalid')
+    if mosh and which('mosh'):
+        return ['mosh', row['target'], '--', *remote]
+    return ['ssh', '-o', 'ConnectTimeout=8', '-o', 'ServerAliveInterval=30', '-t', row['target'], *remote]
+
+
+def main(argv=None, execute=os.execvp):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('place', choices=PLACES)
+    parser.add_argument('--mosh', action='store_true', help='Use mosh when installed; otherwise SSH')
+    parser.add_argument('--hosts', type=Path, default=Path(os.environ.get('DESK_HOSTS', str(Path.home() / 'ai/ws/hosts.tsv'))))
+    args = parser.parse_args(argv)
+    try:
+        command = argv_for(args.place, read_hosts(args.hosts), args.mosh or os.environ.get('DESK_MOSH') == '1')
+        execute(command[0], command)
+        return 0
+    except (Failure, OSError, ValueError):
+        # Never print private destinations, raw parser errors or shell commands.
+        print('接続先を確認してください。WSの ~/ai/ws/hosts.tsv は6列・各部署1件です。', file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

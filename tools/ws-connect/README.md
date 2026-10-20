@@ -85,6 +85,25 @@ Windows Terminal のタブ ──▶ WSL2 Ubuntu ──▶ desk <部署> ──�
 
 本社専用の動的status/head/hands切替helperは同梱しない。Shift+F1のhands09への動的移動も未対応。AI wrapperと各机の引継ぎ/規則、業務サービスの導入・稼働確認はこの窓配置だけでは完了しない。
 
+## Terminalの入口（iTermのプロファイルに相当）
+
+5入口は「WS 机・本社・工場・ミニ・Book」。WS 机は `tmux -L win` の `win` へ入り、不在時だけ1窓を作る。本社などの実宛先は公開JSONへ入れず、WS内の `~/ai/ws/hosts.tsv` を `terminal-entry` が読む。工場は専用の `factory-remote.sh` へ入り、端末ごとに別の今の窓を保つ。
+
+`setup-ws.sh` は手動設定用の断片を `~/ai/ws/windows-terminal/profiles.json` へ置く。設定は自動で書き換えない。Windows Terminalで `Ctrl+,` →「JSONファイルを開く」を選ぶ。通常版の実体は `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`、非Store版は `%LOCALAPPDATA%\Microsoft\Windows Terminal\settings.json`、Preview版は `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json`。開いたsettings.jsonを先に控え、次のどちらか1つで入れる。
+
+- **Install-WSの自動fragmentを使う**: `windows/wt-fragment.json` が配置する7入口（5入口＋Claude・疎通）を使う。新断片の `profiles.list` は追加しない。新断片の `defaultProfile` と `keybindings` の項目だけをsettings.jsonの一番外側へ併合する。settings.json全体を新断片で置き換えない。
+- **手動で5入口を入れる**: Install-WSを使った場合は、先に `%LOCALAPPDATA%\Microsoft\Windows Terminal\Fragments\THELIFEPLAN\ws-desks.json` だけをFragments外へ退避する。他のfragmentは触らない。その後、新断片の `profiles.list` の5要素をsettings.jsonの既存 `profiles.list` へ足す。同じGUIDが既にあれば追加せずその要素を更新する。`defaultProfile` と `keybindings` は一番外側の同名設定へ併合する。既存の別プロファイル/キー設定を丸ごと置き換えない。手動版はClaude・疎通の補助2入口を含まない。
+
+5入口のGUIDと名前は両方式で共通。既定は「WS 机」。`keybindings` の `{"id":null,"keys":"f11"}` でTerminalのF11全画面を外し、tmuxへ渡す。既存の `f11` キー設定がある場合はその要素をnull設定へ置き換え、同じキーを重複追加しない。F1〜12はWSのtmux.confが扱う。別のFキーもTerminalに登録されている時は同じ方法で該当キーだけ外す。古いTerminalで `keybindings` が使えない場合は更新するか、旧式の `actions` に `{"command":"unbound","keys":"f11"}` を設定する。fragment側にはdefaultProfile/keybindingsを足さない。
+
+moshがWS側と接続先の両方にあれば、Ubuntuで `DESK_MOSH=1 ~/ai/ws/bin/terminal-entry honsha`（他は `koujou` / `mini` / `book`）で同じ入口を使える。profileをmoshにしたい場合はcommandline内のhelperの前に `DESK_MOSH=1 ` を付ける。未導入なら既定のsshを使う。
+
+**先に58窓の表を生成して `~/ai/bin/studio.sh --create-only` を行うのが通常の順番。** 「WS 机」のfallbackで1窓だけのwinが先にできた場合、58窓の表とは一致しないためstudio.shは未変更のまま止まる。既存winを自動削除しない。本社へ状態を伝えて配置を整える。
+
+本社・ミニ・Book側へ将来追加する「WS」の入口は `ssh -t <WS利用者>@<WSのTailscale名または100アドレス> tmux -L win attach -t win`。PC名/Tailscale名の本人回答後に各端末の担当が値を入れる。今は空欄で、各端末のメニューは今回変更していない。
+
+公式: [settings.jsonの場所](https://learn.microsoft.com/en-us/windows/terminal/install)、[defaultProfile](https://learn.microsoft.com/en-us/windows/terminal/customize-settings/startup)、[キー解除](https://learn.microsoft.com/en-us/windows/terminal/customize-settings/actions)、[fragment形式](https://learn.microsoft.com/en-us/windows/terminal/json-fragment-extensions)。Windows Terminal/WSL実機での表示とFキー到達は未確認。
+
 ## hosts.tsv の書き方
 
 タブ区切り。`記号 表示名 ユーザー@アドレス tmuxソケット セッション 窓`。ソケット・セッションが無い所は `-`。
