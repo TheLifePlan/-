@@ -47,7 +47,7 @@ install -m 644 "$KIT/builder/windows.conf.ws" "$KIT/builder/tmux.conf" "$HOME/ai
 echo "   WS窓の生成台本を配置した。READMEのpython3行でwindows.confを作る。"
 mkdir -p "$WS/windows-terminal"
 install -m 644 "$KIT/windows-terminal/profiles.json" "$WS/windows-terminal/profiles.json"
-echo "   Terminal設定断片: $WS/windows-terminal/profiles.json。READMEの『Terminalの入口』でprofiles.list/defaultProfile/F11を設定する。"
+echo "   Terminal設定断片: $WS/windows-terminal/profiles.json。READMEの『Terminalの入口』でprofiles.list/F11を設定する。既定は変えず、入口は選んだ時だけ開く。"
 
 
 echo "== 5. ssh の設定 (~/.ssh/config に Host 別名を足す。既存の行は触らない)"
